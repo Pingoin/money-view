@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package money_view;
+
+enum csv_type {
+    CSV_TYPE_VRBANK = 0;
+}
+
+message CsvRequest{
+    csv_type type = 1;
+    string csv_data = 2;
+    string account_ID = 3;
+}

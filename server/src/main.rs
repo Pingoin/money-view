@@ -36,6 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let greeter=GreeterServer::new(greeter);
     let greeter= tonic_web::enable(greeter);
     Server::builder()
+    .accept_http1(true)
         .add_service(greeter)
         .serve(addr)
         .await?;
