@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:grpc/grpc_web.dart';
-import 'services/hello.pbgrpc.dart';
+import 'generated/hello.pbgrpc.dart';
 
 void main() {
   runApp(const MyApp());

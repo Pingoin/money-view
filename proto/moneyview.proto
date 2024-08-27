@@ -2,12 +2,32 @@ syntax = "proto3";
 
 package money_view;
 
-enum csv_type {
-    CSV_TYPE_VRBANK = 0;
+enum text_type {
+    TEXTTYPE_VRBANK = 0;
 }
 
-message CsvRequest{
-    csv_type type = 1;
-    string csv_data = 2;
+message TextRequest{
+    text_type type = 1;
+    string data = 2;
     string account_ID = 3;
+    bool compressed = 4;
+}
+
+message Transaction{
+    string transaction_id = 1;
+    string destination_id = 2;
+    int64 timestamp = 3;
+    int32 amount = 4;
+    string account_id = 5;
+    string description = 6;
+    string destination_name=7;
+    optional int32 balance_after = 8;
+}
+
+message TransactionResponse{
+    repeated Transaction transactions = 1;
+}
+
+service MoneyView{
+    rpc SendTextData(TextRequest) returns (TransactionResponse);
 }
