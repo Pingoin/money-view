@@ -3,8 +3,11 @@ name = "money-view"
 version = "0.1.0"
 edition = "2021"
 
+
 [workspace]
-members = ["server", "frontend"]
+members = ["server"]
+default-members = ["server"]
+resolver="2"
 
 [workspace.dependencies]
 tonic-build = "0.12.1"

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:grpc/grpc_web.dart';
-import 'generated/hello.pbgrpc.dart';
+import 'generated/moneyview.pbgrpc.dart';
+import 'generated/moneyview.pb.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,10 +15,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final channel =
         GrpcWebClientChannel.xhr(Uri.parse('http://localhost:50051'));
-    final service = GreeterClient(channel);
+    final service = MoneyViewClient(channel);
     try {
-      service.sayHello(HelloRequest(name: "Hugo")).then(
-            (response) => {debugPrint('movieTitle: ${response.message}')},
+      service.sendTextData(TextRequest()).then(
+            (response) => {debugPrint('movieTitle: ${response.transactions.first.id}')},
           );
     } catch (e) {
       debugPrint("Error: ${e}");
@@ -71,7 +72,20 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
   void _incrementCounter() {
+    final channel =
+        GrpcWebClientChannel.xhr(Uri.parse('http://localhost:50051'));
+    final service = MoneyViewClient(channel);
+    try {
+      service.sendTextData(TextRequest()).then(
+            (response) => {debugPrint('movieTitle: ${response.transactions.first.accountId}')},
+          );
+    } catch (e) {
+      debugPrint("Error: ${e}");
+    }
+
     setState(() {
+
+
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
       // so that the display can reflect the updated values. If we changed
