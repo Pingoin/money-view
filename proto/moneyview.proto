@@ -6,6 +6,8 @@ enum text_type {
     TEXTTYPE_VRBANK = 0;
 }
 
+message Empty{}
+
 message TextRequest{
     text_type type = 1;
     string data = 2;
@@ -31,4 +33,5 @@ message TransactionResponse{
 
 service MoneyView{
     rpc SendTextData(TextRequest) returns (TransactionResponse);
+    rpc GetAllTransactions(Empty) returns (TransactionResponse);
 }

@@ -1,4 +1,5 @@
 import 'package:app/ui/home.dart';
+import 'package:app/ui/transaction_list.dart';
 import 'package:flutter/material.dart';
 
 class IndexPage extends StatefulWidget {
@@ -16,7 +17,7 @@ class _IndexPageState extends State<IndexPage> {
       case 0:
         page = Home();
       case 1:
-        page = Placeholder();
+        page = TransactionList();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -26,25 +27,7 @@ class _IndexPageState extends State<IndexPage> {
         return Scaffold(
             body: Row(children: [
           SafeArea(
-            child: NavigationRail(
-              extended:  constraints.maxWidth >= 600,
-              destinations: [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.favorite),
-                  label: Text('Favorites'),
-                ),
-              ],
-              selectedIndex: selectedIndex,
-              onDestinationSelected: (value) {
-                setState(() {
-                  selectedIndex = value;
-                });
-              },
-            ),
+            child: Navigation(constraints),
           ),
           Expanded(
             child: Container(
@@ -55,5 +38,27 @@ class _IndexPageState extends State<IndexPage> {
         ]));
       }
     );
+  }
+
+  NavigationRail Navigation(BoxConstraints constraints) {
+    return NavigationRail(
+            extended:  constraints.maxWidth >= 600,
+            destinations: [
+              NavigationRailDestination(
+                icon: Icon(Icons.home),
+                label: Text('Home'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.favorite),
+                label: Text('Favorites'),
+              ),
+            ],
+            selectedIndex: selectedIndex,
+            onDestinationSelected: (value) {
+              setState(() {
+                selectedIndex = value;
+              });
+            },
+          );
   }
 }

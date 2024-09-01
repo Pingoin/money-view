@@ -2,7 +2,7 @@ use dotenvy::dotenv;
 use std::env;
 
 use api::money_view_server::MoneyView;
-use api::{TextRequest, Transaction, TransactionResponse};
+use api::{Empty, TextRequest, Transaction, TransactionResponse};
 use couch_rs::document::TypedCouchDocument;
 use couch_rs::types::find::FindQuery;
 use couch_rs::CouchDocument;
@@ -68,6 +68,31 @@ impl MoneyView for MoneyViewServer {
         })?;
         println!("{:?}", docs);
         println!("Request: {:?}", request.into_inner().data);
+
+        let data = db.get_all::<Transaction>().await.map_err(|e| {
+            println!("{:?}", e);
+            Status::new(tonic::Code::Unknown, format!("{:?}", e))
+        })?;
+
+        let data = data.rows;
+        let mut response = TransactionResponse::default();
+        response.transactions = data;
+        Ok(Response::new(response))
+    }
+
+    async fn get_all_transactions(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<TransactionResponse>, Status> {
+
+        let db_host = env::var("MONEY_VIEW_DB_HOST").unwrap();
+        let db_name = env::var("MONEY_VIEW_DB_NAME").unwrap();
+        let db_user = env::var("MONEY_VIEW_USER").unwrap();
+        let db_password = env::var("MONEY_VIEW_DB_PASSWD").unwrap();
+
+
+        let client = couch_rs::Client::new(db_host.as_str(), db_user.as_str(), db_password.as_str()).unwrap();
+        let db = client.db(db_name.as_str()).await.unwrap();
 
         let data = db.get_all::<Transaction>().await.map_err(|e| {
             println!("{:?}", e);
