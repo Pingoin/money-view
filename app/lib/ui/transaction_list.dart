@@ -1,5 +1,6 @@
 import 'package:app/application_state.dart';
 import 'package:app/generated/moneyview.pbgrpc.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,16 +21,33 @@ class _TransactionListState extends State<TransactionList> {
   Widget build(BuildContext context) {
     var appState = context.watch<ApplicationState>();
     if (isEmpty) {
-    appState.moneyViewClient.getAllTransactions(Empty()).then((response) {
-      setState(() {
-        transactions = response.transactions;
-        isEmpty=false;
+      appState.moneyViewClient.getAllTransactions(Empty()).then((response) {
+        setState(() {
+          transactions = response.transactions;
+          isEmpty = false;
+        });
       });
-    });
     }
     return Center(
         child: Column(
       children: [
+        ElevatedButton.icon(
+          onPressed: () async {
+            FilePickerResult? result = await FilePicker.platform.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['csv', 'txt'],
+            );
+            if (result != null) {
+              String content = String.fromCharCodes(result.files.single.bytes!);
+              var response = await appState.moneyViewClient
+                  .sendTextData(TextRequest(data: content));
+              setState(() {
+                transactions = response.transactions;
+              });
+            }
+          },
+          label: Text('Open'),
+        ),
         for (var transaction in transactions)
           ListTile(
             leading: Icon(Icons.favorite),
