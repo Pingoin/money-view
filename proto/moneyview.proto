@@ -15,17 +15,30 @@ message TextRequest{
     bool compressed = 4;
 }
 
-message Transaction{
-    string id = 1;
-    string destination_id = 2;
-    int64 timestamp = 3;
-    int32 amount = 4;
-    string account_id = 5;
-    string description = 6;
-    string destination_name=7;
-    optional int32 balance_after = 8;
-    string rev=9;
-}
+// Represents an individual line item of a transaction (e.g., a specific product or service)
+message LineItem {
+    string description = 1; // Description of the line item (e.g., "Milk")
+    float amount = 2; // Amount for the line item
+    string category = 3; // Category for the line item (e.g., "Groceries")
+  }
+
+// Represents a main transaction as it appears on a bank statement
+message Transaction {
+    string transactionId = 1; // Unique identifier for the transaction
+    string accountId = 3; // ID of the bank account where the transaction occurred
+    int64 date = 4; // Date of the transaction (e.g., "2024-09-04")
+    float totalAmount = 5; // Total amount of the transaction
+    TransactionPartner partner = 7; // Reference ID to the transaction partner
+    repeated LineItem lineItems = 8; // List of line items within the transaction
+    string description = 9; // Description or memo of the transaction
+    float balanceAfterTransaction = 10; // Account balance after the transaction
+  }
+
+// Represents a transaction partner (e.g., a store or vendor)
+message TransactionPartner {
+    string partnerId = 1; // Unique identifier for the transaction partner
+    string name = 2; // Name of the transaction partner (e.g., "Supermarket XY")
+  }
 
 message TransactionResponse{
     repeated Transaction transactions = 1;

@@ -1,5 +1,6 @@
 import 'package:app/application_state.dart';
 import 'package:app/generated/moneyview.pbgrpc.dart';
+import 'package:app/ui/transaction_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,13 +30,13 @@ class _TransactionListState extends State<TransactionList> {
       });
     }
     return Center(
-        child: Column(
+        child: ListView(
       children: [
         ElevatedButton.icon(
           onPressed: () async {
             FilePickerResult? result = await FilePicker.platform.pickFiles(
               type: FileType.custom,
-              allowedExtensions: ['csv', 'txt'],
+              allowedExtensions: ['mta'],
             );
             if (result != null) {
               String content = String.fromCharCodes(result.files.single.bytes!);
@@ -49,10 +50,7 @@ class _TransactionListState extends State<TransactionList> {
           label: Text('Open'),
         ),
         for (var transaction in transactions)
-          ListTile(
-            leading: Icon(Icons.favorite),
-            title: Text(transaction.id),
-          ),
+          TransactionWidget(transaction: transaction),
       ],
     ));
   }

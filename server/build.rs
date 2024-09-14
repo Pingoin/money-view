@@ -12,10 +12,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ".",
             "#[derive(Deserialize, Serialize)]",
         )
-        .field_attribute("id", "#[serde(skip_serializing_if = \"String::is_empty\")]")
-        .field_attribute("rev", "#[serde(skip_serializing_if = \"String::is_empty\")]")
-        .field_attribute("id", "#[serde(rename = \"_id\")]")
-        .field_attribute("rev", "#[serde(rename = \"_rev\")]")
+        //.field_attribute("id", "#[serde(skip_serializing_if = \"String::is_empty\")]")
+        //.field_attribute("rev", "#[serde(skip_serializing_if = \"String::is_empty\")]")
+        //.field_attribute("id", "#[serde(rename = \"_id\")]")
+        //.field_attribute("rev", "#[serde(rename = \"_rev\")]")
         .file_descriptor_set_path(out_dir.join("reflection.bin"))
         .build_server(true)
         .build_client(false)
