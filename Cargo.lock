@@ -3427,6 +3427,7 @@ dependencies = [
  "chrono",
  "couch_rs",
  "dotenvy",
+ "itertools 0.13.0",
  "lazy_static",
  "mt940",
  "prost",
@@ -3696,8 +3697,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "surrealdb"
-version = "2.0.0"
-source = "git+https://github.com/surrealdb/surrealdb?tag=v2.0.0-beta.3#d32110b46ddb9af09af19aadb8601c7df623b2b7"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54a327b352feacd0e724399dcb6a673acd6fb2a88e0dc9c3fed7758d97dceef1"
 dependencies = [
  "arrayvec",
  "async-channel",
@@ -3724,6 +3726,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-tungstenite",
+ "tokio-util",
  "tracing",
  "trice",
  "url",
@@ -3735,8 +3738,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-core"
-version = "2.0.0"
-source = "git+https://github.com/surrealdb/surrealdb?tag=v2.0.0-beta.3#d32110b46ddb9af09af19aadb8601c7df623b2b7"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80433611bdf00df5ff59d52a708b60ac23598db3e3f9460cde625ea925c8f776"
 dependencies = [
  "addr",
  "ahash 0.8.11",
@@ -4092,6 +4096,7 @@ checksum = "9cf6b47b3771c49ac75ad09a6162f53ad4b8088b76ac60e8ec1455b31a189fe1"
 dependencies = [
  "bytes",
  "futures-core",
+ "futures-io",
  "futures-sink",
  "pin-project-lite",
  "tokio",

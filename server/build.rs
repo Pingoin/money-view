@@ -8,10 +8,7 @@ use std::{
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     tonic_build::configure()
-        .message_attribute(
-            ".",
-            "#[derive(Deserialize, Serialize)]",
-        )
+        .message_attribute(".", "#[derive(Deserialize, Serialize)]")
         //.field_attribute("id", "#[serde(skip_serializing_if = \"String::is_empty\")]")
         //.field_attribute("rev", "#[serde(skip_serializing_if = \"String::is_empty\")]")
         //.field_attribute("id", "#[serde(rename = \"_id\")]")
@@ -21,8 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_client(false)
         .compile(&["moneyview.proto"], &["../proto"])?;
 
-
-    let string_to_add="use serde::{Serialize, Deserialize};";
+    let string_to_add = "use serde::{Serialize, Deserialize};";
     // Lese den Ordner und iteriere über jede Datei
     for entry in fs::read_dir(out_dir)? {
         let entry = entry?;

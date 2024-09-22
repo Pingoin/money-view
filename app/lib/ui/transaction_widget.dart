@@ -19,7 +19,7 @@ class TransactionWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Transaction ID: ${transaction.transactionId}',
+              'Transaction ID: ${transaction.id}',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),

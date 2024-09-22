@@ -4,7 +4,9 @@ use parser::parse;
 use std::env;
 
 use api::money_view_server::MoneyView;
-use api::{Empty, TextRequest, Transaction, TransactionResponse};
+use api::{
+    Empty, PartnerBalanceResponse, TextRequest, TransactionPartnerResponse, TransactionResponse,
+};
 use tonic::{transport::Server, Request, Response, Status};
 
 pub(crate) mod api;
@@ -21,20 +23,15 @@ impl MoneyView for MoneyViewServer {
         &self,
         request: Request<TextRequest>,
     ) -> Result<Response<TransactionResponse>, Status> {
-        //let find_all = FindQuery::find_all();
-        let mut doc = Transaction::default();
-        doc.transaction_id = format!("{}:{}", "bla", &uuid::Uuid::new_v4().to_string());
-        self.db
-            .save_transaction(&doc)
-            .await
-            .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
         let mt940_string = request.into_inner().data;
+        println!("Len: {}", mt940_string.len());
 
         let data = parse(mt940_string)
             .await
             .map_err(|e| Status::unknown(e.to_string()))?;
+        self.db.save_all(data.1.clone(), data.0.clone()).await.map_err(to_tonic_error)?;
         let mut response = TransactionResponse::default();
-        response.transactions = data;
+        response.transactions = data.0;
         Ok(Response::new(response))
     }
 
@@ -52,13 +49,56 @@ impl MoneyView for MoneyViewServer {
         response.transactions = transactions;
         Ok(Response::new(response))
     }
+
+    async fn get_all_transaction_partners(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<TransactionPartnerResponse>, Status> {
+        let partners = self
+            .db
+            .get_all_transaction_partners()
+            .await
+            .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
+
+        let mut response = TransactionPartnerResponse::default();
+        response.transaction_partners = partners;
+        Ok(Response::new(response))
+    }
+
+    async fn get_partner_balance(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<PartnerBalanceResponse>, Status> {
+        let mut balance_response = PartnerBalanceResponse::default();
+        balance_response.partner_expenses = self
+            .db
+            .get_partner_balance(false)
+            .await
+            .map_err(to_tonic_error)?;
+        balance_response.total_expenses = balance_response
+            .partner_expenses
+            .iter()
+            .map(|partner| partner.balance)
+            .sum();
+        balance_response.partner_income = self
+            .db
+            .get_partner_balance(true)
+            .await
+            .map_err(to_tonic_error)?;
+        balance_response.total_income = balance_response
+            .partner_income
+            .iter()
+            .map(|partner| partner.balance)
+            .sum();
+        Ok(Response::new(balance_response))
+    }
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
-struct Test {
-    pub _id: String,
-    pub _rev: String,
-    pub data: String,
+fn to_tonic_error<T>(err: T) -> Status
+where
+    T: ToString,
+{
+    Status::new(tonic::Code::Aborted, err.to_string())
 }
 
 #[tokio::main]

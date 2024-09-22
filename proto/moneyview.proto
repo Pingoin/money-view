@@ -24,11 +24,11 @@ message LineItem {
 
 // Represents a main transaction as it appears on a bank statement
 message Transaction {
-    string transactionId = 1; // Unique identifier for the transaction
+    string id = 1; // Unique identifier for the transaction
     string accountId = 3; // ID of the bank account where the transaction occurred
     int64 date = 4; // Date of the transaction (e.g., "2024-09-04")
     float totalAmount = 5; // Total amount of the transaction
-    TransactionPartner partner = 7; // Reference ID to the transaction partner
+    string partnerId = 7; // Reference ID to the transaction partner
     repeated LineItem lineItems = 8; // List of line items within the transaction
     string description = 9; // Description or memo of the transaction
     float balanceAfterTransaction = 10; // Account balance after the transaction
@@ -36,7 +36,7 @@ message Transaction {
 
 // Represents a transaction partner (e.g., a store or vendor)
 message TransactionPartner {
-    string partnerId = 1; // Unique identifier for the transaction partner
+    string id = 1; // Unique identifier for the transaction partner
     string name = 2; // Name of the transaction partner (e.g., "Supermarket XY")
   }
 
@@ -44,7 +44,25 @@ message TransactionResponse{
     repeated Transaction transactions = 1;
 }
 
+message TransactionPartnerResponse{
+   repeated TransactionPartner transactionPartners = 1;
+}
+
+message PartnerBalance{
+  string partnerName = 1;
+  float balance = 2;
+  uint32 transactionCount =3 ; 
+}
+
+message PartnerBalanceResponse{
+   repeated PartnerBalance partnerExpenses= 1;
+   float totalExpenses = 2;
+   repeated PartnerBalance partnerIncome=3;
+   float totalIncome = 4;
+}
 service MoneyView{
     rpc SendTextData(TextRequest) returns (TransactionResponse);
     rpc GetAllTransactions(Empty) returns (TransactionResponse);
+    rpc GetAllTransactionPartners(Empty) returns (TransactionPartnerResponse);
+    rpc GetPartnerBalance(Empty) returns (PartnerBalanceResponse);
 }
