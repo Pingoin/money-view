@@ -48,16 +48,16 @@ message TransactionPartnerResponse{
    repeated TransactionPartner transactionPartners = 1;
 }
 
-message PartnerBalance{
-  string partnerName = 1;
+message BalanceInformation{
+  string name = 1;
   float balance = 2;
   uint32 transactionCount =3 ; 
 }
 
 message PartnerBalanceResponse{
-   repeated PartnerBalance partnerExpenses= 1;
+   repeated BalanceInformation partnerExpenses= 1;
    float totalExpenses = 2;
-   repeated PartnerBalance partnerIncome=3;
+   repeated BalanceInformation partnerIncome=3;
    float totalIncome = 4;
 }
 service MoneyView{

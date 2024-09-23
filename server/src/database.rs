@@ -1,4 +1,4 @@
-use crate::api::{LineItem, PartnerBalance, Transaction, TransactionPartner};
+use crate::api::{LineItem, BalanceInformation, Transaction, TransactionPartner};
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
@@ -132,12 +132,12 @@ impl Database {
     pub(crate) async fn get_partner_balance(
         &self,
         positive: bool,
-    ) -> surrealdb::Result<Vec<PartnerBalance>> {
-        const BASE_QUERY: &'static str ="Select math::Sum(total_amount) as balance,partner_id.name as partner_name, count() as transaction_count from transaction ";
+    ) -> surrealdb::Result<Vec<BalanceInformation>> {
+        const BASE_QUERY: &'static str ="Select math::Sum(total_amount) as balance,partner_id.name as name, count() as transaction_count from transaction ";
         const POSITIVE: &'static str = "where total_amount>0.0 ";
         const NEGATIVE: &'static str = "where total_amount<0.0 ";
-        const GROUP: &'static str = "group partner_name;";
-        let result: Vec<PartnerBalance> = self
+        const GROUP: &'static str = "group name;";
+        let result: Vec<BalanceInformation> = self
             .db
             .query(format!(
                 "{}{}{}",

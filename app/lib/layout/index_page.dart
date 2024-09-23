@@ -1,4 +1,5 @@
 import 'package:app/ui/home.dart';
+import 'package:app/ui/partner_balance.dart';
 import 'package:app/ui/transaction_list.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +19,8 @@ class _IndexPageState extends State<IndexPage> {
         page = Home();
       case 1:
         page = TransactionList();
+      case 2:
+        page = PartnerBalanceWidget();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -51,6 +54,10 @@ class _IndexPageState extends State<IndexPage> {
               NavigationRailDestination(
                 icon: Icon(Icons.favorite),
                 label: Text('Favorites'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.account_balance_wallet),
+                label: Text('Partner Balance'),
               ),
             ],
             selectedIndex: selectedIndex,
