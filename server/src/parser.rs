@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
-use crate::api::{Transaction, TransactionPartner};
-use chrono::NaiveTime;
+use crate::database::{TransactionPartnerRecord, TransactionRecord};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use mt940::{parse_mt940, DebitOrCredit, ExtDebitOrCredit, Message,sanitizers::sanitize};
+use mt940::{parse_mt940, sanitizers::sanitize, DebitOrCredit, ExtDebitOrCredit, Message};
 use rayon::prelude::*;
 use regex::Regex;
 use rust_decimal::Decimal;
@@ -17,7 +16,6 @@ lazy_static! {
     static ref USAGE_KEY_RENAMER: Regex =
         Regex::new(r"([A-Z])(REF|RED|REN|VWZ|BAN|IC)(\+|: )").unwrap();
 }
-
 
 fn parse_amount(amount: Decimal, debit: &ExtDebitOrCredit) -> ShortResult<f32> {
     let val: f32 = amount.try_into()?;
@@ -64,7 +62,9 @@ fn remove_numbers(input: String) -> String {
         .into_owned()
 }
 
-pub async fn parse(input: String) -> ShortResult<(Vec<Transaction>, Vec<TransactionPartner>)> {
+pub async fn parse(
+    input: String,
+) -> ShortResult<(Vec<TransactionRecord>, Vec<TransactionPartnerRecord>)> {
     let input = pre_parser(input).await?;
     println!("preparse: {:?}", input.len());
     let res = parse_mt940(&input)?;
@@ -73,7 +73,10 @@ pub async fn parse(input: String) -> ShortResult<(Vec<Transaction>, Vec<Transact
 }
 
 pub async fn pre_parser(input: String) -> ShortResult<String> {
-    let input = input.replace("\r\n", "\n").replace("\n?", "?").replace("\n-","");
+    let input = input
+        .replace("\r\n", "\n")
+        .replace("\n?", "?")
+        .replace("\n-", "");
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
         let _ = send.send(
@@ -90,7 +93,7 @@ pub async fn pre_parser(input: String) -> ShortResult<String> {
                         line
                     }
                 })
-                .map(|s|sanitize(&s))
+                .map(|s| sanitize(&s))
                 .collect::<Vec<String>>()
                 .join("\n"),
         );
@@ -100,10 +103,10 @@ pub async fn pre_parser(input: String) -> ShortResult<String> {
 
 async fn parse_messages(
     input: Vec<Message>,
-) -> ShortResult<(Vec<Transaction>, Vec<TransactionPartner>)> {
+) -> ShortResult<(Vec<TransactionRecord>, Vec<TransactionPartnerRecord>)> {
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
-        let result: (Vec<Transaction>, Vec<TransactionPartner>) = input
+        let result: (Vec<TransactionRecord>, Vec<TransactionPartnerRecord>) = input
             .par_iter()
             .map(process_single_message)
             .flatten()
@@ -115,24 +118,26 @@ async fn parse_messages(
     result.1 = result.1.into_iter().unique_by(|t| t.id.clone()).collect();
     Ok(result)
 }
-fn process_single_message(input: &Message) -> (Vec<Transaction>, Vec<TransactionPartner>) {
+fn process_single_message(
+    input: &Message,
+) -> (Vec<TransactionRecord>, Vec<TransactionPartnerRecord>) {
     let mut balance: f32 = input.opening_balance.amount.try_into().unwrap_or_default();
     if input.opening_balance.debit_credit_indicator == DebitOrCredit::Debit {
         balance *= -1.0;
     }
     let account_id = input.account_id.clone();
 
-    let result: (Vec<Transaction>, Vec<TransactionPartner>) = input
+    let result: (Vec<TransactionRecord>, Vec<TransactionPartnerRecord>) = input
         .statement_lines
         .iter()
         .map(|line| {
-            let mut transaction = Transaction::default();
-            let mut partner = TransactionPartner::default();
+            let mut transaction = TransactionRecord::default();
+            let mut partner = TransactionPartnerRecord::default();
             transaction.total_amount =
                 parse_amount(line.amount.clone(), &line.ext_debit_credit_indicator)
                     .unwrap_or_default();
             if let Some(date) = line.entry_date {
-                transaction.date = date.and_time(NaiveTime::MIN).and_utc().timestamp();
+                transaction.date = date;
             }
             balance += transaction.total_amount;
             transaction.balance_after_transaction = balance;
@@ -140,14 +145,21 @@ fn process_single_message(input: &Message) -> (Vec<Transaction>, Vec<Transaction
             if let Some(info) = line.information_to_account_owner.clone() {
                 let info: Vec<&str> = info.split("?").collect();
 
-                transaction.id = info.get(1).unwrap_or(&"").to_string();
+                transaction.id = surrealdb::sql::Thing::from((
+                    "transaction",
+                    format!(
+                        "{}-{}-{}",
+                        transaction.date,
+                        transaction.total_amount,
+                        info.get(1).unwrap_or(&"")
+                    )
+                    .as_str(),
+                ));
                 transaction.description = info.get(4).unwrap_or(&"").to_string();
                 partner.name = info.get(3).unwrap_or(&"").to_string();
-                partner.id = info.get(2).unwrap_or(&"").to_string();
+                partner.id = surrealdb::sql::Thing::from(("partner", *info.get(2).unwrap_or(&"")));
             }
-            transaction.id = format!("{}-{}-{}",transaction.date,transaction.total_amount,transaction.id);
-
-            transaction.partner_id=partner.id.clone();
+            transaction.partner_id = partner.id.clone();
             (transaction, partner)
         })
         .collect();
@@ -174,7 +186,7 @@ fn parse_86_line(line: String) -> ShortResult<String> {
 
     if let Some(cren) = parsed_line.get("CREN") {
         partner_name = format!("{}", cren);
-    }else if line.contains("00Abschluss"){
+    } else if line.contains("00Abschluss") {
         partner_name = "VR-BANK UCKERMARK-RANDOW".to_string();
     }
 
@@ -184,6 +196,10 @@ fn parse_86_line(line: String) -> ShortResult<String> {
         partner_id = format!("{}", iban);
     } else if partner_name != "".to_string() {
         partner_id = partner_name.clone();
+    }
+
+    if partner_id =="OFFLINE".to_string() {
+        partner_id=partner_name.clone();
     }
 
     Ok(format!(

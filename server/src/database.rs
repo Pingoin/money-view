@@ -1,4 +1,5 @@
-use crate::api::{LineItem, BalanceInformation, Transaction, TransactionPartner};
+use crate::api::{BalanceInformation, LineItem, Transaction, TransactionPartner};
+use chrono::{Duration, NaiveDate};
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
@@ -35,9 +36,8 @@ impl Database {
 
     pub(crate) async fn save_transaction(
         &self,
-        transaction: &Transaction,
+        transaction: TransactionRecord,
     ) -> surrealdb::Result<()> {
-        let transaction: TransactionRecord = TransactionRecord::from_transaction(transaction);
         let result: std::prelude::v1::Option<TransactionRecord> = self
             .db
             .select((
@@ -75,11 +75,10 @@ impl Database {
         Ok(transactions)
     }
 
-    pub(crate) async fn save_tramsaction_partner(
+    pub(crate) async fn save_transaction_partner(
         &self,
-        partner: &TransactionPartner,
+        partner: TransactionPartnerRecord,
     ) -> surrealdb::Result<()> {
-        let partner: TransactionPartnerRecord = TransactionPartnerRecord::from_partner(partner);
         let ressource = (partner.id.tb.clone(), partner.id.id.clone().to_raw());
 
         let result: std::prelude::v1::Option<TransactionPartnerRecord> =
@@ -103,27 +102,24 @@ impl Database {
 
     pub(crate) async fn get_all_transaction_partners(
         &self,
-    ) -> surrealdb::Result<Vec<TransactionPartner>> {
+    ) -> surrealdb::Result<Vec<TransactionPartnerRecord>> {
         let partners: Vec<TransactionPartnerRecord> = self.db.select("partner").await?;
-        let partners: Vec<TransactionPartner> =
-            partners.iter().map(|p| p.clone().into_partner()).collect();
         Ok(partners)
     }
     pub(crate) async fn save_all(
         &self,
-        partners: Vec<TransactionPartner>,
-        transactions: Vec<Transaction>,
+        partners: Vec<TransactionPartnerRecord>,
+        transactions: Vec<TransactionRecord>,
     ) -> surrealdb::Result<()> {
-        let mut partner_count=0u32;
-        let mut transaction_count =0u32;
+        let mut partner_count = 0u32;
+        let mut transaction_count = 0u32;
         for partner in partners {
-
-            self.save_tramsaction_partner(&partner).await?;
-            partner_count+=1;
+            self.save_transaction_partner(partner).await?;
+            partner_count += 1;
         }
         for transaction in transactions {
-            self.save_transaction(&transaction).await?;
-            transaction_count+=1;
+            self.save_transaction(transaction).await?;
+            transaction_count += 1;
         }
         println!("Inserted:\n {transaction_count} transactions\n {partner_count} partners");
         Ok(())
@@ -151,24 +147,40 @@ impl Database {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct TransactionRecord {
-    id: Thing,                      // Unique identifier for the transaction
-    account_id: String,             // ID of the bank account where the transaction occurred
-    date: i64,                      // Date of the transaction (e.g., "2024-09-04")
-    total_amount: f32,              // Total amount of the transaction
-    partner_id: Thing,              // Reference ID to the transaction partner
-    line_items: Vec<LineItem>,      // List of line items within the transaction
-    description: String,            // Description or memo of the transaction
-    balance_after_transaction: f32, // Account balance after the transaction
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub(crate) struct TransactionRecord {
+    pub(crate) id: Thing,                 // Unique identifier for the transaction
+    pub(crate) account_id: String,        // ID of the bank account where the transaction occurred
+    pub(crate) date: NaiveDate,           // Date of the transaction (e.g., "2024-09-04")
+    pub(crate) total_amount: f32,         // Total amount of the transaction
+    pub(crate) partner_id: Thing,         // Reference ID to the transaction partner
+    pub(crate) line_items: Vec<LineItem>, // List of line items within the transaction
+    pub(crate) description: String,       // Description or memo of the transaction
+    pub(crate) balance_after_transaction: f32, // Account balance after the transaction
+}
+
+impl Default for TransactionRecord {
+    fn default() -> Self {
+        Self {
+            id: Thing::from(("transaction", "tmp")),
+            account_id: Default::default(),
+            date: Default::default(),
+            total_amount: Default::default(),
+            partner_id: Thing::from(("partner", "tmp")),
+            line_items: Default::default(),
+            description: Default::default(),
+            balance_after_transaction: Default::default(),
+        }
+    }
 }
 
 impl TransactionRecord {
-    fn from_transaction(value: &Transaction) -> Self {
+    #[allow(unused)]
+    pub(crate) fn from_transaction(value: &Transaction) -> Self {
         TransactionRecord {
             id: Thing::from(("transaction".to_string(), value.id.clone())),
             account_id: value.account_id.clone(),
-            date: value.date,
+            date: NaiveDate::default() + Duration::days(value.date),
             total_amount: value.total_amount,
             partner_id: Thing::from(("partner".to_string(), value.partner_id.clone())),
             line_items: value.line_items.clone(),
@@ -176,11 +188,11 @@ impl TransactionRecord {
             balance_after_transaction: value.balance_after_transaction,
         }
     }
-    fn into_transaction(self) -> Transaction {
+    pub fn into_transaction(self) -> Transaction {
         Transaction {
             id: self.id.id.to_raw(),
             account_id: self.account_id,
-            date: self.date,
+            date: (self.date - NaiveDate::default()).num_days(),
             total_amount: self.total_amount,
             partner_id: self.partner_id.id.to_raw(),
             line_items: self.line_items,
@@ -191,20 +203,30 @@ impl TransactionRecord {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct TransactionPartnerRecord {
-    id: Thing,
-    name: String,
+pub(crate) struct TransactionPartnerRecord {
+    pub(crate) id: Thing,
+    pub(crate) name: String,
+}
+
+impl Default for TransactionPartnerRecord {
+    fn default() -> Self {
+        Self {
+            id: Thing::from(("partner", "no")),
+            name: Default::default(),
+        }
+    }
 }
 
 impl TransactionPartnerRecord {
-    fn from_partner(value: &TransactionPartner) -> Self {
+    #[allow(unused)]
+    pub(crate) fn from_partner(value: &TransactionPartner) -> Self {
         TransactionPartnerRecord {
             id: Thing::from(("partner".to_string(), value.id.clone())),
             name: value.name.clone(),
         }
     }
 
-    fn into_partner(self) -> TransactionPartner {
+    pub fn into_partner(self) -> TransactionPartner {
         TransactionPartner {
             id: self.id.id.to_raw(),
             name: self.name,

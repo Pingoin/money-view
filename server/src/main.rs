@@ -29,9 +29,16 @@ impl MoneyView for MoneyViewServer {
         let data = parse(mt940_string)
             .await
             .map_err(|e| Status::unknown(e.to_string()))?;
-        self.db.save_all(data.1.clone(), data.0.clone()).await.map_err(to_tonic_error)?;
+        self.db
+            .save_all(data.1.clone(), data.0.clone())
+            .await
+            .map_err(to_tonic_error)?;
         let mut response = TransactionResponse::default();
-        response.transactions = data.0;
+        response.transactions = data
+            .0
+            .iter()
+            .map(|t| t.clone().into_transaction())
+            .collect();
         Ok(Response::new(response))
     }
 
@@ -61,7 +68,10 @@ impl MoneyView for MoneyViewServer {
             .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
 
         let mut response = TransactionPartnerResponse::default();
-        response.transaction_partners = partners;
+        response.transaction_partners = partners
+            .iter()
+            .map(|partner| partner.clone().into_partner())
+            .collect();
         Ok(Response::new(response))
     }
 
