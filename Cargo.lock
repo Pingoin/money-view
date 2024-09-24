@@ -2038,6 +2038,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "money-view"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "couch_rs",
+ "dotenvy",
+ "itertools 0.13.0",
+ "lazy_static",
+ "mt940",
+ "prost",
+ "prost-types",
+ "rayon",
+ "regex",
+ "rust_decimal",
+ "serde",
+ "sha2",
+ "surrealdb",
+ "tokio",
+ "tonic",
+ "tonic-build",
+ "tonic-reflection",
+ "tonic-types",
+ "tonic-web",
+ "uuid",
+]
+
+[[package]]
 name = "mt940"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3417,34 +3445,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.77",
-]
-
-[[package]]
-name = "server"
-version = "0.1.0"
-dependencies = [
- "axum",
- "chrono",
- "couch_rs",
- "dotenvy",
- "itertools 0.13.0",
- "lazy_static",
- "mt940",
- "prost",
- "prost-types",
- "rayon",
- "regex",
- "rust_decimal",
- "serde",
- "sha2",
- "surrealdb",
- "tokio",
- "tonic",
- "tonic-build",
- "tonic-reflection",
- "tonic-types",
- "tonic-web",
- "uuid",
 ]
 
 [[package]]

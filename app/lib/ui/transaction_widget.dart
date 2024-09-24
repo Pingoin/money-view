@@ -24,10 +24,9 @@ class TransactionWidget extends StatelessWidget {
             ),
             SizedBox(height: 8.0),
             Text(
-                'Date: ${DateTime.fromMillisecondsSinceEpoch(transaction.date.toInt()*1000 ).toLocal()}'),
+                'Date: ${DateTime.fromMillisecondsSinceEpoch(transaction.date.toInt() * 1000).toLocal()}'),
             SizedBox(height: 8.0),
-            Text(
-                'Total Amount: ${transaction.totalAmount.toStringAsFixed(2)}'),
+            Text('Total Amount: ${transaction.totalAmount.toStringAsFixed(2)}'),
             SizedBox(height: 8.0),
             Text('Description: ${transaction.description}'),
             SizedBox(height: 8.0),

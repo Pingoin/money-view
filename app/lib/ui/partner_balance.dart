@@ -27,9 +27,11 @@ class _PartnerBalanceWidgetState extends State<PartnerBalanceWidget> {
       appState.moneyViewClient.getPartnerBalance(Empty()).then((response) {
         setState(() {
           partnerExpenses = response.partnerExpenses;
-          partnerExpenses.sort((a, b) => -a.balance.abs().compareTo(b.balance.abs()));
+          partnerExpenses
+              .sort((a, b) => -a.balance.abs().compareTo(b.balance.abs()));
           partnerIncome = response.partnerIncome;
-          partnerIncome.sort((a, b) => -a.balance.abs().compareTo(b.balance.abs()));
+          partnerIncome
+              .sort((a, b) => -a.balance.abs().compareTo(b.balance.abs()));
           totalExpenses = response.totalExpenses;
           totalIncome = response.totalIncome;
           isEmpty = false;

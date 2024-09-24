@@ -1,22 +1,19 @@
 use std::{
-    env,
     fs::{self, OpenOptions},
     io::{Read, Write},
     path::PathBuf,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_dir = PathBuf::from("./src/generated");
+    fs::create_dir_all(&out_dir)?;
     tonic_build::configure()
+        .out_dir(&out_dir)
         .message_attribute(".", "#[derive(Deserialize, Serialize)]")
-        //.field_attribute("id", "#[serde(skip_serializing_if = \"String::is_empty\")]")
-        //.field_attribute("rev", "#[serde(skip_serializing_if = \"String::is_empty\")]")
-        //.field_attribute("id", "#[serde(rename = \"_id\")]")
-        //.field_attribute("rev", "#[serde(rename = \"_rev\")]")
         .file_descriptor_set_path(out_dir.join("reflection.bin"))
         .build_server(true)
         .build_client(false)
-        .compile(&["moneyview.proto"], &["../proto"])?;
+        .compile(&["moneyview.proto"], &["proto"])?;
 
     let string_to_add = "use serde::{Serialize, Deserialize};";
     // Lese den Ordner und iteriere über jede Datei

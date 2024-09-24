@@ -89,21 +89,20 @@ class BalanceChart extends StatelessWidget {
           );
         }),
       ),
-    DataTable(
-            columns: [
-              DataColumn(label: Text('Name')),
-              DataColumn(label: Text('Balance')),
-              DataColumn(label: Text('Transaction Count')),
-            ],
-            rows: data.map((data) {
-              return DataRow(cells: [
-                DataCell(Text(data.name)),
-                DataCell(Text(data.balance.toStringAsFixed(2))),
-                DataCell(Text(data.transactionCount.toString())),
-              ]);
-            }).toList(),
-          ),
-    
+      DataTable(
+        columns: [
+          DataColumn(label: Text('Name')),
+          DataColumn(label: Text('Balance')),
+          DataColumn(label: Text('Transaction Count')),
+        ],
+        rows: data.map((data) {
+          return DataRow(cells: [
+            DataCell(Text(data.name)),
+            DataCell(Text(data.balance.toStringAsFixed(2))),
+            DataCell(Text(data.transactionCount.toString())),
+          ]);
+        }).toList(),
+      ),
     ]);
   }
 }

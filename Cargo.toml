@@ -1,16 +1,45 @@
-[workspace.package]
+[package]
+name = "money-view"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+axum = "0.7.5"
+serde = { version = "1.0.210", features = ["derive"] }
+prost = "0.13.2"
+prost-types = "0.13.2"
+tokio = { version = "1.40.0", features = ["macros", "rt-multi-thread"] }
+tonic = "0.12.2"
+tonic-web = "0.12.2"
+tonic-reflection = "0.12.2"
+tonic-types = "0.12.2"
+couch_rs = {version="0.10.1", features = ["derive"]}
+dotenvy = "0.15"
+mt940="1"
+rayon ="1.7"
+rust_decimal = "1.36.0"
+regex = "1.10.6"
+lazy_static = "1"
+chrono = "0.4.38"
+sha2 = "0.10"
+surrealdb={version="2.0.1"}
+tonic-build = "0.12.2"
+itertools="0.13.0"
 
-[workspace]
-members = ["server"]
-default-members = ["server"]
-resolver="2"
+[dependencies.uuid]
+version = "1.10.0"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
 
-[workspace.dependencies]
-tonic-build = "0.12.1"
-tonic = "0.12.1"
-tonic-web = "0.12.1"
-tonic-reflection = "0.12.1"
-tonic-types = "0.12.1"
+
+
+[[bin]]
+name = "compile_protos"
+path = "src/compile_protos.rs"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"

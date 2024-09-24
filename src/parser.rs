@@ -198,8 +198,8 @@ fn parse_86_line(line: String) -> ShortResult<String> {
         partner_id = partner_name.clone();
     }
 
-    if partner_id =="OFFLINE".to_string() {
-        partner_id=partner_name.clone();
+    if partner_id == "OFFLINE".to_string() {
+        partner_id = partner_name.clone();
     }
 
     Ok(format!(
