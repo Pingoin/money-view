@@ -1,3 +1,5 @@
+default: serve-web
+
 # Compiles the protobuf files for the Rust subproject
 compile-protos-rust:
     cargo run --bin compile_protos
@@ -34,9 +36,12 @@ compile-protos-dart:
 
     echo "Protobuf-Dateien wurden erfolgreich kompiliert!"
 
+# starts flutter dev in web mode
 serve-flutter-web: compile-protos-dart
     cd app && flutter run -d chrome
 
 # Run server and client in a split terminal using tmux
 serve-web:
     tmux new-session -d -s mysession 'just serve-server' \; split-window -h 'just serve-flutter-web' \; attach
+
+compile-protos: compile-protos-dart compile-protos-rust

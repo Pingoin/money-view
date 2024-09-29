@@ -19,7 +19,7 @@ message TextRequest{
 message LineItem {
     string description = 1; // Description of the line item (e.g., "Milk")
     float amount = 2; // Amount for the line item
-    string category = 3; // Category for the line item (e.g., "Groceries")
+    string tag_id = 3; // Category for the line item (e.g., "Groceries")
   }
 
 // Represents a main transaction as it appears on a bank statement
@@ -28,7 +28,7 @@ message Transaction {
     string accountId = 3; // ID of the bank account where the transaction occurred
     int64 date = 4; // Date of the transaction (e.g., "2024-09-04")
     float totalAmount = 5; // Total amount of the transaction
-    string partnerId = 7; // Reference ID to the transaction partner
+    string partnerName = 7; // Name of the transaction partner
     repeated LineItem lineItems = 8; // List of line items within the transaction
     string description = 9; // Description or memo of the transaction
     float balanceAfterTransaction = 10; // Account balance after the transaction
@@ -36,8 +36,7 @@ message Transaction {
 
 // Represents a transaction partner (e.g., a store or vendor)
 message TransactionPartner {
-    string id = 1; // Unique identifier for the transaction partner
-    string name = 2; // Name of the transaction partner (e.g., "Supermarket XY")
+    string name = 1; // Name of the transaction partner (e.g., "Supermarket XY")
   }
 
 message TransactionResponse{
@@ -54,15 +53,29 @@ message BalanceInformation{
   uint32 transactionCount =3 ; 
 }
 
-message PartnerBalanceResponse{
-   repeated BalanceInformation partnerExpenses= 1;
+message BalanceResponse{
+   repeated BalanceInformation expenses= 1;
    float totalExpenses = 2;
-   repeated BalanceInformation partnerIncome=3;
+   repeated BalanceInformation income=3;
    float totalIncome = 4;
 }
+
+message Tag{
+  string id=1;
+  string name = 2;
+  repeated string key_words= 3;
+}
+
+message TagResponse{
+   repeated Tag tags = 1;
+}
+
 service MoneyView{
     rpc SendTextData(TextRequest) returns (TransactionResponse);
     rpc GetAllTransactions(Empty) returns (TransactionResponse);
     rpc GetAllTransactionPartners(Empty) returns (TransactionPartnerResponse);
-    rpc GetPartnerBalance(Empty) returns (PartnerBalanceResponse);
+    rpc GetPartnerBalance(Empty) returns (BalanceResponse);
+    rpc GetTagBalance(Empty) returns (BalanceResponse);
+    rpc GetTags(Empty) returns (TagResponse);
+    rpc SetTag(Tag) returns(Empty);
 }

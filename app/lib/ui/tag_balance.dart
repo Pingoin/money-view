@@ -4,16 +4,16 @@ import 'package:app/ui/balance_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class PartnerBalanceWidget extends StatefulWidget {
-  const PartnerBalanceWidget({
+class TagBalanceWidget extends StatefulWidget {
+  const TagBalanceWidget({
     super.key,
   });
 
   @override
-  State<PartnerBalanceWidget> createState() => _PartnerBalanceWidgetState();
+  State<TagBalanceWidget> createState() => _TagBalanceWidgetState();
 }
 
-class _PartnerBalanceWidgetState extends State<PartnerBalanceWidget> {
+class _TagBalanceWidgetState extends State<TagBalanceWidget> {
   List<BalanceInformation> partnerExpenses = [];
   List<BalanceInformation> partnerIncome = [];
   double totalExpenses = 0.0;
@@ -23,10 +23,8 @@ class _PartnerBalanceWidgetState extends State<PartnerBalanceWidget> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<ApplicationState>();
-
-    context.watch<ApplicationState>().moneyViewClient.getTags(Empty());
     if (isEmpty) {
-      appState.moneyViewClient.getPartnerBalance(Empty()).then((response) {
+      appState.moneyViewClient.getTagBalance(Empty()).then((response) {
         setState(() {
           partnerExpenses = response.expenses;
           partnerExpenses

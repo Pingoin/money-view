@@ -1,5 +1,7 @@
 import 'package:app/ui/home.dart';
 import 'package:app/ui/partner_balance.dart';
+import 'package:app/ui/tag_balance.dart';
+import 'package:app/ui/tag_manager.dart';
 import 'package:app/ui/transaction_list.dart';
 import 'package:flutter/material.dart';
 
@@ -21,6 +23,10 @@ class _IndexPageState extends State<IndexPage> {
         page = TransactionList();
       case 2:
         page = PartnerBalanceWidget();
+      case 3:
+       page = TagBalanceWidget();
+      case 4:
+       page = TagManager();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -56,6 +62,14 @@ class _IndexPageState extends State<IndexPage> {
         NavigationRailDestination(
           icon: Icon(Icons.account_balance_wallet),
           label: Text('Partner Balance'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.account_balance_wallet),
+          label: Text('Tag Balance'),
+        ),
+                NavigationRailDestination(
+          icon: Icon(Icons.account_balance_wallet),
+          label: Text('Tag Manager'),
         ),
       ],
       selectedIndex: selectedIndex,

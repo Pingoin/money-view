@@ -2,10 +2,13 @@ use database::Database;
 use dotenvy::dotenv;
 use parser::parse;
 use std::env;
+pub(crate) mod generated{
+    pub(crate) mod money_view;
+}
 
 use api::money_view_server::MoneyView;
 use api::{
-    Empty, PartnerBalanceResponse, TextRequest, TransactionPartnerResponse, TransactionResponse,
+    Empty, BalanceResponse, Tag, TagResponse, TextRequest, TransactionPartnerResponse, TransactionResponse
 };
 use tonic::{transport::Server, Request, Response, Status};
 
@@ -19,6 +22,26 @@ struct MoneyViewServer {
 
 #[tonic::async_trait]
 impl MoneyView for MoneyViewServer {
+    // ... existing code ...
+
+    async fn get_tags(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<TagResponse>, Status> {
+        let tags: Vec<Tag>=self.db.get_tags().await.map_err(to_tonic_error)?.into_iter().map(|t|t.into()).collect();
+
+        Ok(Response::new(TagResponse { tags:tags})) // Placeholder return
+    }
+
+    async fn set_tag(
+        &self,
+        request: Request<Tag>,
+    ) -> Result<Response<Empty>, Status> {
+        self.db.save_tag(request.into_inner().into()).await.map_err(to_tonic_error)?;
+        self.db.update_tags().await.map_err(to_tonic_error)?;
+
+        Ok(Response::new(Empty {})) // Placeholder return
+    }
     async fn send_text_data(
         &self,
         request: Request<TextRequest>,
@@ -30,14 +53,13 @@ impl MoneyView for MoneyViewServer {
             .await
             .map_err(|e| Status::unknown(e.to_string()))?;
         self.db
-            .save_all(data.1.clone(), data.0.clone())
+            .save_all(data.clone()) 
             .await
             .map_err(to_tonic_error)?;
         let mut response = TransactionResponse::default();
         response.transactions = data
-            .0
-            .iter()
-            .map(|t| t.clone().into_transaction())
+            .into_iter()
+            .map(|t| t.clone().into())
             .collect();
         Ok(Response::new(response))
     }
@@ -53,7 +75,7 @@ impl MoneyView for MoneyViewServer {
             .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
 
         let mut response = TransactionResponse::default();
-        response.transactions = transactions;
+        response.transactions = transactions.into_iter().map(|t|t.into()).collect();
         Ok(Response::new(response))
     }
 
@@ -68,40 +90,70 @@ impl MoneyView for MoneyViewServer {
             .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
 
         let mut response = TransactionPartnerResponse::default();
-        response.transaction_partners = partners
-            .iter()
-            .map(|partner| partner.clone().into_partner())
-            .collect();
+        response.transaction_partners = partners;
         Ok(Response::new(response))
     }
 
     async fn get_partner_balance(
         &self,
         _request: Request<Empty>,
-    ) -> Result<Response<PartnerBalanceResponse>, Status> {
-        let mut balance_response = PartnerBalanceResponse::default();
-        balance_response.partner_expenses = self
+    ) -> Result<Response<BalanceResponse>, Status> {
+        let mut balance_response = BalanceResponse::default();
+        balance_response.expenses = self
             .db
             .get_partner_balance(false)
             .await
             .map_err(to_tonic_error)?;
         balance_response.total_expenses = balance_response
-            .partner_expenses
+            .expenses
             .iter()
             .map(|partner| partner.balance)
             .sum();
-        balance_response.partner_income = self
+        balance_response.income = self
             .db
             .get_partner_balance(true)
             .await
             .map_err(to_tonic_error)?;
         balance_response.total_income = balance_response
-            .partner_income
+            .income
             .iter()
             .map(|partner| partner.balance)
             .sum();
         Ok(Response::new(balance_response))
     }
+
+    async fn get_tag_balance(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<BalanceResponse>, Status> {
+        let mut balance_response = BalanceResponse::default();
+        balance_response.expenses = self
+            .db
+            .get_tag_balance(false)
+            .await
+            .map_err(to_tonic_error)?;
+        balance_response.total_expenses = balance_response
+            .expenses
+            .iter()
+            .map(|partner| partner.balance)
+            .sum();
+        balance_response.income = self
+            .db
+            .get_tag_balance(true)
+            .await
+            .map_err(to_tonic_error)?;
+        balance_response.total_income = balance_response
+            .income
+            .iter()
+            .map(|partner| partner.balance)
+            .sum();
+        Ok(Response::new(balance_response))
+    }
+
+    
+
+    
+
 }
 
 fn to_tonic_error<T>(err: T) -> Status
@@ -124,6 +176,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Database::new(host, user_name, password, namespace, database)
         .await
         .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
+    db.init_db().await?;
 
     let money_view = MoneyViewServer { db };
     let money_view = api::money_view_server::MoneyViewServer::new(money_view);
@@ -147,3 +200,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 mod parser;
+pub(crate) type  ShortResult<T> =Result<T, Box<dyn std::error::Error>>;

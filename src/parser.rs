@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use crate::database::{TransactionPartnerRecord, TransactionRecord};
+use crate::{database::TransactionRecord, ShortResult};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use mt940::{parse_mt940, sanitizers::sanitize, DebitOrCredit, ExtDebitOrCredit, Message};
 use rayon::prelude::*;
 use regex::Regex;
 use rust_decimal::Decimal;
-type ShortResult<T> = Result<T, Box<dyn std::error::Error>>;
+
 
 lazy_static! {
     static ref FIELD_KEY_PARTIAL_ERAZER: Regex =
@@ -64,7 +64,7 @@ fn remove_numbers(input: String) -> String {
 
 pub async fn parse(
     input: String,
-) -> ShortResult<(Vec<TransactionRecord>, Vec<TransactionPartnerRecord>)> {
+) -> ShortResult<Vec<TransactionRecord>> {
     let input = pre_parser(input).await?;
     println!("preparse: {:?}", input.len());
     let res = parse_mt940(&input)?;
@@ -103,10 +103,10 @@ pub async fn pre_parser(input: String) -> ShortResult<String> {
 
 async fn parse_messages(
     input: Vec<Message>,
-) -> ShortResult<(Vec<TransactionRecord>, Vec<TransactionPartnerRecord>)> {
+) -> ShortResult<Vec<TransactionRecord>> {
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
-        let result: (Vec<TransactionRecord>, Vec<TransactionPartnerRecord>) = input
+        let result: Vec<TransactionRecord> = input
             .par_iter()
             .map(process_single_message)
             .flatten()
@@ -114,25 +114,23 @@ async fn parse_messages(
         let _ = send.send(result);
     });
     let mut result = recv.await?;
-    result.0 = result.0.into_iter().unique_by(|t| t.id.clone()).collect();
-    result.1 = result.1.into_iter().unique_by(|t| t.id.clone()).collect();
+    result = result.into_iter().unique_by(|t| t.id.clone()).collect();
     Ok(result)
 }
 fn process_single_message(
     input: &Message,
-) -> (Vec<TransactionRecord>, Vec<TransactionPartnerRecord>) {
+) -> Vec<TransactionRecord> {
     let mut balance: f32 = input.opening_balance.amount.try_into().unwrap_or_default();
     if input.opening_balance.debit_credit_indicator == DebitOrCredit::Debit {
         balance *= -1.0;
     }
     let account_id = input.account_id.clone();
 
-    let result: (Vec<TransactionRecord>, Vec<TransactionPartnerRecord>) = input
+    let result: Vec<TransactionRecord> = input
         .statement_lines
         .iter()
         .map(|line| {
             let mut transaction = TransactionRecord::default();
-            let mut partner = TransactionPartnerRecord::default();
             transaction.total_amount =
                 parse_amount(line.amount.clone(), &line.ext_debit_credit_indicator)
                     .unwrap_or_default();
@@ -156,11 +154,9 @@ fn process_single_message(
                     .as_str(),
                 ));
                 transaction.description = info.get(4).unwrap_or(&"").to_string();
-                partner.name = info.get(3).unwrap_or(&"").to_string();
-                partner.id = surrealdb::sql::Thing::from(("partner", *info.get(2).unwrap_or(&"")));
+                transaction.partner_name= info.get(3).unwrap_or(&"").to_string();
             }
-            transaction.partner_id = partner.id.clone();
-            (transaction, partner)
+            transaction
         })
         .collect();
     result
