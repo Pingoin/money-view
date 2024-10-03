@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::api::{self, BalanceInformation, LineItem, Transaction, TransactionPartner};
 use crate::ShortResult;
-use chrono::{Duration, NaiveDate};
+use chrono::NaiveDate;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::remote::ws::{Client, Ws};
@@ -85,9 +85,19 @@ impl Database {
         }
         Ok(())
     }
-    pub(crate) async fn get_all_transactions(&self) -> surrealdb::Result<Vec<TransactionRecord>> {
-        let transactions: Vec<TransactionRecord> = self.db.select("transaction").await?;
-        Ok(transactions)
+    pub(crate) async fn get_all_transactions(&self) -> surrealdb::Result<Vec<Transaction>> {
+        let transactions: Vec<QueryResult> = self.db.query("Select id,date,total_amount,partner_name,description, line_items.tag_id.name as tags from transaction;").await?.take(0)?;
+        Ok(transactions
+            .into_iter()
+            .map(|res| Transaction {
+                id: res.id.to_raw(),
+                date: (res.date - NaiveDate::default()).num_days(),
+                total_amount: res.total_amount as f32,
+                partner_name: res.partner_name,
+                description: res.description,
+                tags: res.tags,
+            })
+            .collect())
     }
 
     pub(crate) async fn get_all_transaction_partners(
@@ -134,7 +144,7 @@ impl Database {
 
     pub(crate) async fn update_tags(&self) -> ShortResult<()> {
         let tags = HashMap::new();
-        let mut transactions: Vec<TransactionRecord> = self.get_all_transactions().await?;
+        let mut transactions: Vec<TransactionRecord> = self.get_all_transaction_records().await?;
         let (send, recv) = tokio::sync::oneshot::channel();
         rayon::spawn(move || {
             let result = transactions
@@ -147,6 +157,11 @@ impl Database {
 
         self.save_all(transactions).await?;
         Ok(())
+    }
+
+    async fn get_all_transaction_records(&self) -> ShortResult<Vec<TransactionRecord>> {
+        let transactions: Vec<TransactionRecord> = self.db.select("transaction").await?;
+        Ok(transactions)
     }
 
     async fn get_tag_map(&self) -> ShortResult<HashMap<Thing, Vec<String>>> {
@@ -196,7 +211,6 @@ impl Database {
             .take(0)?;
         Ok(result)
     }
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -209,14 +223,14 @@ pub(crate) struct Tag {
 impl From<api::Tag> for Tag {
     fn from(value: api::Tag) -> Self {
         Self {
-            id: Thing::from(("tag",value.id.as_str())),
+            id: Thing::from(("tag", value.id.as_str())),
             name: value.name,
             keywords: value.key_words,
         }
     }
 }
 
-impl Into<api::Tag> for Tag{
+impl Into<api::Tag> for Tag {
     fn into(self) -> api::Tag {
         api::Tag {
             id: self.id.id.to_raw(),
@@ -224,6 +238,16 @@ impl Into<api::Tag> for Tag{
             key_words: self.keywords,
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+struct QueryResult {
+    id: Thing,
+    date: NaiveDate,
+    total_amount: f64,
+    partner_name: String,
+    description: String,
+    tags: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -249,40 +273,6 @@ impl Default for TransactionRecord {
             line_items: Default::default(),
             description: Default::default(),
             balance_after_transaction: Default::default(),
-        }
-    }
-}
-
-impl Into<Transaction> for TransactionRecord {
-    fn into(self) -> Transaction {
-        Transaction {
-            id: self.id.id.to_raw(),
-            account_id: self.account_id,
-            date: (self.date - NaiveDate::default()).num_days(),
-            total_amount: self.total_amount,
-            partner_name: self.partner_name,
-            line_items: self
-                .line_items
-                .into_iter()
-                .map(|line| line.into())
-                .collect(),
-            description: self.description,
-            balance_after_transaction: self.balance_after_transaction,
-        }
-    }
-}
-
-impl From<Transaction> for TransactionRecord {
-    fn from(value: Transaction) -> Self {
-        TransactionRecord {
-            id: Thing::from(("transaction".to_string(), value.id.clone())),
-            account_id: value.account_id.clone(),
-            date: NaiveDate::default() + Duration::days(value.date),
-            total_amount: value.total_amount,
-            partner_name: value.partner_name.clone(),
-            line_items: value.line_items.into_iter().map(|l| l.into()).collect(),
-            description: value.description.clone(),
-            balance_after_transaction: value.balance_after_transaction,
         }
     }
 }

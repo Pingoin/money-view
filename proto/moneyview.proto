@@ -25,13 +25,11 @@ message LineItem {
 // Represents a main transaction as it appears on a bank statement
 message Transaction {
     string id = 1; // Unique identifier for the transaction
-    string accountId = 3; // ID of the bank account where the transaction occurred
     int64 date = 4; // Date of the transaction (e.g., "2024-09-04")
     float totalAmount = 5; // Total amount of the transaction
     string partnerName = 7; // Name of the transaction partner
-    repeated LineItem lineItems = 8; // List of line items within the transaction
     string description = 9; // Description or memo of the transaction
-    float balanceAfterTransaction = 10; // Account balance after the transaction
+    repeated string tags = 11; // Tags of the transaction
   }
 
 // Represents a transaction partner (e.g., a store or vendor)

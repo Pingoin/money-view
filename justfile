@@ -5,8 +5,8 @@ compile-protos-rust:
     cargo run --bin compile_protos
 
 # Starts the server and compiles the protobuf files beforehand
-serve-server: compile-protos-rust
-    cargo watch -x "run --bin main"
+serve-server:
+    cargo watch -i "app" -x "run --bin main"
 
 # Formats the Rust code
 format-rust:
@@ -45,3 +45,6 @@ serve-web:
     tmux new-session -d -s mysession 'just serve-server' \; split-window -h 'just serve-flutter-web' \; attach
 
 compile-protos: compile-protos-dart compile-protos-rust
+
+build-flutter-web: compile-protos-dart
+    cd app && flutter build web

@@ -53,14 +53,13 @@ impl MoneyView for MoneyViewServer {
             .await
             .map_err(|e| Status::unknown(e.to_string()))?;
         self.db
-            .save_all(data.clone()) 
+            .save_all(data) 
             .await
             .map_err(to_tonic_error)?;
+
+        let data=self.db.get_all_transactions().await.map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
         let mut response = TransactionResponse::default();
-        response.transactions = data
-            .into_iter()
-            .map(|t| t.clone().into())
-            .collect();
+        response.transactions = data;
         Ok(Response::new(response))
     }
 
@@ -75,7 +74,7 @@ impl MoneyView for MoneyViewServer {
             .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
 
         let mut response = TransactionResponse::default();
-        response.transactions = transactions.into_iter().map(|t|t.into()).collect();
+        response.transactions = transactions;
         Ok(Response::new(response))
     }
 
