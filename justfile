@@ -48,3 +48,6 @@ compile-protos: compile-protos-dart compile-protos-rust
 
 build-flutter-web: compile-protos-dart
     cd app && flutter build web
+
+build-server: compile-protos-rust
+    cargo build --release

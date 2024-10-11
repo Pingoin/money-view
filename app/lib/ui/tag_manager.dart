@@ -68,7 +68,7 @@ class _TagManagerState extends State<TagManager> {
             _createTag(context);
           },
           child: Icon(Icons.add),
-        ),
+        ), 
       ),
     );
   }

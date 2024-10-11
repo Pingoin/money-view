@@ -1,14 +1,21 @@
 import 'package:app/generated/moneyview.pbgrpc.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
-import 'package:grpc/grpc_web.dart';
+
+import 'grpc_channel.dart'
+    if (dart.library.html) 'grpc_channel_web.dart';
+
+
 
 class ApplicationState extends ChangeNotifier {
   var current = WordPair.random();
 
   var favorites = <WordPair>[];
-  final moneyViewClient = MoneyViewClient(
-      GrpcWebClientChannel.xhr(Uri.parse('http://localhost:50051')));
+
+
+
+  dynamic moneyViewClient = MoneyViewClient(
+      getChannel());
 
   void getNext() {
     current = WordPair.random();
@@ -23,4 +30,5 @@ class ApplicationState extends ChangeNotifier {
     }
     notifyListeners();
   }
+  
 }
