@@ -77,35 +77,60 @@ jobs:
           path: src/generated/  # Verzeichnis mit generierten Protobuf-Dateien
 
   # Kompiliert Rust in zwei verschiedenen Architekturen, verwendet die generierten Protobuf-Dateien
-  build_rust:
+  build_rust_x86_64:
     runs-on: ubuntu-latest
     needs: build_rust_protos
-    strategy:
-      matrix:
-        platform: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]  
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Download Rust Protobuf files
         uses: actions/download-artifact@v3
         with:
           name: rust-protos
           path: ./src/generated/ 
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
       - name: Build Rust Binary
         run: |
-          cargo build --release --target ${{ matrix.platform }}
-
+          cargo build --release
       - name: Upload Rust binary artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: rust-binary-${{ matrix.platform }}
-          path: target/${{ matrix.platform }}/release/
+          name: rust-binary-x86-64
+          path: target/release/
+  build_rust_aarch64:
+    runs-on: ubuntu-latest-arm64
+    name: Build on ubuntu-22.04 armv7
+    needs: build_rust_protos
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Download Rust Protobuf files
+        uses: actions/download-artifact@v3
+        with:
+          name: rust-protos
+          path: ./src/generated/
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build Rust Binary
+        run: |
+          cargo build --release
+      - name: Upload Rust binary artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rust-binary-arm64
+          path: target/release/
 
   # Schritt zum Erstellen des Dockerimages
   docker_build:
     runs-on: ubuntu-latest
-    needs: [build_rust, build_protos_flutter]
+    needs: [build_rust_x86_64, build_protos_flutter]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
