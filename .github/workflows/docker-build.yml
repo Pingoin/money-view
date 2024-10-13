@@ -1,9 +1,9 @@
-name: Build and Push Docker Image
+name: Build and Deploy Docker Image
 
 on:
   push:
     branches:
-      - master  # Dieser Workflow wird ausgeführt, wenn auf den Branch "main" gepusht wird
+      - master
   pull_request:
 
 jobs:
@@ -14,16 +14,71 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Install Rust toolchain
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      # Install Rust toolchain
+      - name: Install Rust toolchain for ARM64
+        run: rustup target add aarch64-unknown-linux-gnu
+      - name: Install Cross Compilation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+      # Install Flutter
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.10.0'  # Specify Flutter version
+
+      # Install Protobuf compiler
+      - name: Install Protobuf Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      # Compile Protobuf files for Rust
+      - name: Compile Protobuf files for Rust
+        run: |
+          cargo run --bin compile_protos
+
+      # Compile Rust server
+      - name: Build Rust server
+        run: |
+          cargo build --release --target=aarch64-unknown-linux-gnu
+        env:
+          RUSTFLAGS: "-C target-feature=-crt-static"  # Optionally tweak this for static builds
+
+      # Compile Protobuf files for Dart (Flutter)
+      - name: Compile Protobuf files for Dart
+        run: |
+          PROTO_DIR="proto"
+          OUT_DIR="app/lib/generated"
+          mkdir -p $OUT_DIR
+          for proto_file in $PROTO_DIR/*.proto; do
+            protoc -I=$PROTO_DIR --dart_out=grpc:$OUT_DIR $proto_file
+          done
+
+      # Build Flutter web app
+      - name: Build Flutter web app
+        run: |
+          cd app && flutter build web
+
+      # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      # Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build and push multi-arch image
+      # Build and push multi-arch Docker image
+      - name: Build and push multi-arch Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -32,5 +87,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/money_view:latest
 
+      # Log out from Docker Hub
       - name: Logout from Docker Hub
         run: docker logout
