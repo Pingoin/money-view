@@ -18,7 +18,8 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.10.0'  
+          channel: stable
+          flutter-version: 3.19.0
 
       - name: Install protoc and Dart plugin
         run: |
@@ -78,7 +79,7 @@ jobs:
   # Kompiliert Rust in zwei verschiedenen Architekturen, verwendet die generierten Protobuf-Dateien
   build_rust:
     runs-on: ubuntu-latest
-    needs: build_protos_flutter
+    needs: build_rust_protos
     strategy:
       matrix:
         platform: [linux/amd64, linux/arm64]
