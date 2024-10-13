@@ -65,7 +65,7 @@ jobs:
           override: true
 
       - name: Install dependencies
-        run: sudo apt-get install -y build-essential pkg-config libssl-dev
+        run: sudo apt-get install -y build-essential pkg-config libssl-dev protobuf-compiler
 
       - name: Compile Protobuf files for Rust
         run: cargo run --bin compile_protos
