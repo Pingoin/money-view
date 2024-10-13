@@ -30,7 +30,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/money-view:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/money_view:latest
 
       - name: Logout from Docker Hub
         run: docker logout
