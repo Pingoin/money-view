@@ -15,6 +15,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.10.0'  
 
       - name: Install protoc and Dart plugin
         run: |
@@ -30,7 +34,7 @@ jobs:
           for proto_file in $PROTO_DIR/*.proto; do
             protoc -I=$PROTO_DIR --dart_out=grpc:$OUT_DIR $proto_file
           done
-          
+
       - name: Build Flutter Web App
         run: |
           cd app
@@ -46,7 +50,32 @@ jobs:
         id: protos
         run: echo "::set-output name=proto_dir::proto"
 
-  # Kompiliert Rust in zwei verschiedenen Architekturen
+  # Schritt für das Generieren der Rust Protobuf-Dateien (nur einmal)
+  build_rust_protos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      # Install Rust toolchain
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install dependencies
+        run: sudo apt-get install -y build-essential pkg-config libssl-dev
+
+      - name: Compile Protobuf files for Rust
+        run: cargo run --bin compile_protos
+
+      - name: Upload Rust Protobuf artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rust-protos
+          path: src/gegerated/  # Verzeichnis mit generierten Protobuf-Dateien
+
+  # Kompiliert Rust in zwei verschiedenen Architekturen, verwendet die generierten Protobuf-Dateien
   build_rust:
     runs-on: ubuntu-latest
     needs: build_protos_flutter
@@ -57,12 +86,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: sudo apt-get install -y build-essential pkg-config libssl-dev
-
-      - name: Compile Protobuf files for Rust
-        run: cargo run --bin compile_protos
-
+      - name: Download Rust Protobuf files
+        uses: actions/download-artifact@v3
+        with:
+          name: rust-protos
+          path: ./src/gegerated/ 
       - name: Build Rust Binary
         run: |
           cargo build --release --target ${{ matrix.platform }}
@@ -80,7 +108,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Download Rust binaries
         uses: actions/download-artifact@v3
         with:
@@ -99,4 +135,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/money_view:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:latest
