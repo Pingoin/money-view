@@ -82,7 +82,7 @@ jobs:
     needs: build_rust_protos
     strategy:
       matrix:
-        platform: [linux/amd64, linux/arm64]
+        platform: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]  
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -105,7 +105,7 @@ jobs:
   # Schritt zum Erstellen des Dockerimages
   docker_build:
     runs-on: ubuntu-latest
-    needs: build_rust
+    needs: [build_rust, build_protos_flutter]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -121,9 +121,15 @@ jobs:
       - name: Download Rust binaries
         uses: actions/download-artifact@v3
         with:
-          name: rust-binary-linux/amd64
+          name: x86_64-unknown-linux-gnu
           path: ./bin/linux-amd64
 
+      - name: Download Rust binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: aarch64-unknown-linux-gnu
+          path: ./bin/linux-arm64
+  
       - name: Download Flutter Web artifacts
         uses: actions/download-artifact@v3
         with:
