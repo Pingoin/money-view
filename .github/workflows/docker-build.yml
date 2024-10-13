@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: rust-protos
-          path: src/gegerated/  # Verzeichnis mit generierten Protobuf-Dateien
+          path: src/generated/  # Verzeichnis mit generierten Protobuf-Dateien
 
   # Kompiliert Rust in zwei verschiedenen Architekturen, verwendet die generierten Protobuf-Dateien
   build_rust:
@@ -91,7 +91,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: rust-protos
-          path: ./src/gegerated/ 
+          path: ./src/generated/ 
       - name: Build Rust Binary
         run: |
           cargo build --release --target ${{ matrix.platform }}
