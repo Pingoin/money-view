@@ -10,6 +10,7 @@ jobs:
   # Schritt für das Generieren der Proto-Files und Flutter-Web-Anwendung
   build_protos_flutter:
     runs-on: ubuntu-latest
+    name: Build Frontend
     outputs:
       proto_dir: ${{ steps.protos.outputs.proto_dir }}
     steps:
@@ -54,6 +55,7 @@ jobs:
   # Schritt für das Generieren der Rust Protobuf-Dateien (nur einmal)
   build_rust_protos:
     runs-on: ubuntu-latest
+    name: Build protobuf for rust
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -74,6 +76,7 @@ jobs:
   # Kompiliert Rust in zwei verschiedenen Architekturen, verwendet die generierten Protobuf-Dateien
   build_rust_x86_64:
     runs-on: ubuntu-latest
+    name: Build Server on AMD64
     needs: build_rust_protos
     steps:
       - name: Checkout code
@@ -94,7 +97,7 @@ jobs:
           path: target/release/money-view
   build_rust_aarch64:
     runs-on: ubuntu-latest
-    name: Build on ubuntu-22.04 armv7
+    name: Build Server on ARM64
     needs: build_rust_protos
     steps:
       - name: Checkout code
@@ -121,6 +124,7 @@ jobs:
   # Schritt zum Erstellen des Dockerimages
   docker_build:
     runs-on: ubuntu-latest
+    name: Build Dockerimage
     needs: [build_rust_x86_64, build_protos_flutter, build_rust_aarch64]
     steps:
       - name: Checkout code
@@ -158,4 +162,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/money-view:latest
