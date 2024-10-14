@@ -14,7 +14,7 @@ jobs:
       proto_dir: ${{ steps.protos.outputs.proto_dir }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -42,7 +42,7 @@ jobs:
           flutter build web
 
       - name: Upload Flutter build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: flutter-web
           path: app/build/web/
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # Install Rust toolchain
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -71,7 +71,7 @@ jobs:
         run: cargo run --bin compile_protos
 
       - name: Upload Rust Protobuf artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rust-protos
           path: src/generated/  # Verzeichnis mit generierten Protobuf-Dateien
@@ -82,9 +82,9 @@ jobs:
     needs: build_rust_protos
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Rust Protobuf files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rust-protos
           path: ./src/generated/ 
@@ -97,7 +97,7 @@ jobs:
         run: |
           cargo build --release
       - name: Upload Rust binary artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rust-binary-x86-64
           path: target/release/money-view
@@ -107,9 +107,9 @@ jobs:
     needs: build_rust_protos
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Rust Protobuf files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rust-protos
           path: ./src/generated/
@@ -121,12 +121,12 @@ jobs:
       - name: Rust arm64 toolchain
         run: rustup target add aarch64-unknown-linux-gnu
       - name: Install arm64 Linker
-        run: sudo apt-get install aarch64-linux-gnu-gcc
+        run: sudo apt-get install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
       - name: Build Rust Binary
         run: |
           cargo build --release --target=aarch64-unknown-linux-gnu
       - name: Upload Rust binary artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rust-binary-arm64
           path: target/aarch64-unknown-linux-gnu/release/money-view
@@ -137,7 +137,7 @@ jobs:
     needs: [build_rust_x86_64, build_protos_flutter, build_rust_aarch64]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -148,19 +148,19 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Download Rust binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: x86_64-unknown-linux-gnu
           path: ./bin/amd64
 
       - name: Download Rust binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: aarch64-unknown-linux-gnu
           path: ./bin/arm64
   
       - name: Download Flutter Web artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: flutter-web
           path: ./web
