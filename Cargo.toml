@@ -41,5 +41,5 @@ name = "compile_protos"
 path = "src/compile_protos.rs"
 
 [[bin]]
-name = "main"
+name = "money-view"
 path = "src/main.rs"

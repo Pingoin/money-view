@@ -1,17 +1,25 @@
 # Use a minimal base image for running the server
 FROM debian:bullseye-slim
 
+ARG TARGETARCH
+
 # Install dependencies
-RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
 
 # Copy Rust server binary
-COPY ./target/aarch64-unknown-linux-gnu/release/my_rust_server /usr/local/bin/my_rust_server
+COPY ./bin/$TARGETARCH/money-view /usr/local/bin/money-view
 
 # Copy Flutter web build
-COPY ./app/build/web /var/www/html
+COPY ./web /usr/share/nginx/html
 
-# Expose ports
+# Kopiere den Nginx-Konfigurationsfile
+COPY nginx.conf /etc/nginx/conf.d
+
+# Erstelle eine Supervisor-Konfiguration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Exponiere die Ports für gRPC und Nginx
 EXPOSE 50051 80
 
-# Start NGINX and the Rust server
-CMD ["sh", "-c", "nginx && my_rust_server"]
+# Starte Supervisor, um beide Dienste zu starten
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
