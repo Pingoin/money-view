@@ -1,0 +1,10 @@
+services:
+  money-view-server:
+    image: pingoin/money-view:latest  # Verwende das bereits hochgeladene Image
+    ports:
+      - "50051:50051"  # gRPC Server-Port
+      - "80:80"  # Nginx Web-Server-Port
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Nginx Konfigurationsdatei
+      - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf  # Supervisor Konfigurationsdatei
+    restart: unless-stopped

@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt
 
 # Copy Rust server binary
 COPY ./bin/$TARGETARCH/money-view /usr/local/bin/money-view
+RUN chmod +x /usr/local/bin/money-view
 
 # Copy Flutter web build
 COPY ./web /usr/share/nginx/html
