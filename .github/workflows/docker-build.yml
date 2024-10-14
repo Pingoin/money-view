@@ -49,7 +49,7 @@ jobs:
 
       - name: Output Proto Directory
         id: protos
-        run: echo "::set-output name=proto_dir::proto"
+        run: echo "name=proto_dir::proto >> $GITHUB_OUTPUT"
 
   # Schritt für das Generieren der Rust Protobuf-Dateien (nur einmal)
   build_rust_protos:
@@ -121,7 +121,7 @@ jobs:
       - name: Rust arm64 toolchain
         run: rustup target add aarch64-unknown-linux-gnu
       - name: Install arm64 Linker
-        run: sudo apt-get install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+        run: sudo apt-get install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu pkg-config libssl-dev
       - name: Build Rust Binary
         run: |
           cargo build --release --target=aarch64-unknown-linux-gnu

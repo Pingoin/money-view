@@ -22,7 +22,7 @@ regex = "1.10.6"
 lazy_static = "1"
 chrono = "0.4.38"
 sha2 = "0.10"
-surrealdb={version="2.0.1"}
+surrealdb={version="2.0.4", features=["rusttls"]}
 tonic-build = "0.12.2"
 itertools="0.13.0"
 
