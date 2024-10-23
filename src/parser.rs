@@ -8,7 +8,6 @@ use rayon::prelude::*;
 use regex::Regex;
 use rust_decimal::Decimal;
 
-
 lazy_static! {
     static ref FIELD_KEY_PARTIAL_ERAZER: Regex =
         Regex::new(r"\$(2([1-9])|3([3-9])|6([1-9]))").unwrap();
@@ -62,9 +61,7 @@ fn remove_numbers(input: String) -> String {
         .into_owned()
 }
 
-pub async fn parse(
-    input: String,
-) -> ShortResult<Vec<TransactionRecord>> {
+pub async fn parse(input: String) -> ShortResult<Vec<TransactionRecord>> {
     let input = pre_parser(input).await?;
     println!("preparse: {:?}", input.len());
     let res = parse_mt940(&input)?;
@@ -101,9 +98,7 @@ pub async fn pre_parser(input: String) -> ShortResult<String> {
     Ok(recv.await?)
 }
 
-async fn parse_messages(
-    input: Vec<Message>,
-) -> ShortResult<Vec<TransactionRecord>> {
+async fn parse_messages(input: Vec<Message>) -> ShortResult<Vec<TransactionRecord>> {
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
         let result: Vec<TransactionRecord> = input
@@ -117,9 +112,7 @@ async fn parse_messages(
     result = result.into_iter().unique_by(|t| t.id.clone()).collect();
     Ok(result)
 }
-fn process_single_message(
-    input: &Message,
-) -> Vec<TransactionRecord> {
+fn process_single_message(input: &Message) -> Vec<TransactionRecord> {
     let mut balance: f32 = input.opening_balance.amount.try_into().unwrap_or_default();
     if input.opening_balance.debit_credit_indicator == DebitOrCredit::Debit {
         balance *= -1.0;
@@ -154,7 +147,7 @@ fn process_single_message(
                     .as_str(),
                 ));
                 transaction.description = info.get(4).unwrap_or(&"").to_string();
-                transaction.partner_name= info.get(3).unwrap_or(&"").to_string();
+                transaction.partner_name = info.get(3).unwrap_or(&"").to_string();
             }
             transaction
         })

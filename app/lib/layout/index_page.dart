@@ -24,9 +24,9 @@ class _IndexPageState extends State<IndexPage> {
       case 2:
         page = PartnerBalanceWidget();
       case 3:
-       page = TagBalanceWidget();
+        page = TagBalanceWidget();
       case 4:
-       page = TagManager();
+        page = TagManager();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -67,7 +67,7 @@ class _IndexPageState extends State<IndexPage> {
           icon: Icon(Icons.account_balance_wallet),
           label: Text('Tag Balance'),
         ),
-                NavigationRailDestination(
+        NavigationRailDestination(
           icon: Icon(Icons.account_balance_wallet),
           label: Text('Tag Manager'),
         ),

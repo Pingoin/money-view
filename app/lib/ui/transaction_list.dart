@@ -2,7 +2,7 @@ import 'package:app/application_state.dart';
 import 'package:app/generated/moneyview.pbgrpc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';  // For date formatting
+import 'package:intl/intl.dart'; // For date formatting
 import 'package:provider/provider.dart';
 
 class TransactionList extends StatefulWidget {
@@ -30,21 +30,25 @@ class _TransactionListState extends State<TransactionList> {
       appState.moneyViewClient.getAllTransactions(Empty()).then((response) {
         setState(() {
           transactions = response.transactions;
-          filteredTransactions = List.from(transactions); // Initially all transactions
+          filteredTransactions =
+              List.from(transactions); // Initially all transactions
           isEmpty = false;
         });
       });
     }
 
     // Sorting logic
-    void _sort<T>(Comparable<T> Function(Transaction t) getField, int columnIndex, bool ascending) {
+    void _sort<T>(Comparable<T> Function(Transaction t) getField,
+        int columnIndex, bool ascending) {
       setState(() {
         sortColumnIndex = columnIndex;
         sortAscending = ascending;
         filteredTransactions.sort((a, b) {
           final Comparable<T> aValue = getField(a);
           final Comparable<T> bValue = getField(b);
-          return ascending ? Comparable.compare(aValue, bValue) : Comparable.compare(bValue, aValue);
+          return ascending
+              ? Comparable.compare(aValue, bValue)
+              : Comparable.compare(bValue, aValue);
         });
       });
     }
@@ -54,9 +58,14 @@ class _TransactionListState extends State<TransactionList> {
       setState(() {
         filterText = query;
         filteredTransactions = transactions.where((transaction) {
-          return transaction.partnerName.toLowerCase().contains(query.toLowerCase()) ||
-                 transaction.description.toLowerCase().contains(query.toLowerCase()) ||
-                 transaction.tags.any((tag) => tag.toLowerCase().contains(query.toLowerCase()));
+          return transaction.partnerName
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              transaction.description
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              transaction.tags.any(
+                  (tag) => tag.toLowerCase().contains(query.toLowerCase()));
         }).toList();
       });
     }
@@ -85,11 +94,14 @@ class _TransactionListState extends State<TransactionList> {
                 allowedExtensions: ['mta'],
               );
               if (result != null) {
-                String content = String.fromCharCodes(result.files.single.bytes!);
-                var response = await appState.moneyViewClient.sendTextData(TextRequest(data: content));
+                String content =
+                    String.fromCharCodes(result.files.single.bytes!);
+                var response = await appState.moneyViewClient
+                    .sendTextData(TextRequest(data: content));
                 setState(() {
                   transactions = response.transactions;
-                  filteredTransactions = List.from(transactions); // Reset filter after new data
+                  filteredTransactions =
+                      List.from(transactions); // Reset filter after new data
                 });
               }
             },
@@ -100,10 +112,13 @@ class _TransactionListState extends State<TransactionList> {
           Expanded(
             child: SingleChildScrollView(
               child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal, // Allow horizontal scrolling if necessary
+                scrollDirection:
+                    Axis.horizontal, // Allow horizontal scrolling if necessary
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width, // Set maximum width to screen width
+                    maxWidth: MediaQuery.of(context)
+                        .size
+                        .width, // Set maximum width to screen width
                   ),
                   child: PaginatedDataTable(
                     header: Text('Transactions'),
@@ -165,7 +180,8 @@ class _TransactionDataSource extends DataTableSource {
     final transaction = transactions[index];
 
     // Convert date from days since 1/1/1970 to DateTime and format it
-    final transactionDate = DateTime(1970, 1, 1).add(Duration(days: transaction.date.toInt()));
+    final transactionDate =
+        DateTime(1970, 1, 1).add(Duration(days: transaction.date.toInt()));
     final formattedDate = DateFormat('dd-MM-yyyy').format(transactionDate);
 
     return DataRow.byIndex(
@@ -182,7 +198,8 @@ class _TransactionDataSource extends DataTableSource {
           ),
         ),
         DataCell(Text(transaction.partnerName)),
-        DataCell(Text('${transaction.totalAmount.toStringAsFixed(2)} €')), // Round to 2 decimals and add €
+        DataCell(Text(
+            '${transaction.totalAmount.toStringAsFixed(2)} €')), // Round to 2 decimals and add €
         DataCell(Text(formattedDate)),
         DataCell(
           Text(

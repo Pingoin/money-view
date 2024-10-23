@@ -1,14 +1,19 @@
+use axum::http::StatusCode;
+use axum::routing::get_service;
+use axum::Router;
 use database::Database;
 use dotenvy::dotenv;
 use parser::parse;
 use std::env;
-pub(crate) mod generated{
+use tower_http::services::ServeDir;
+pub(crate) mod generated {
     pub(crate) mod money_view;
 }
 
 use api::money_view_server::MoneyView;
 use api::{
-    Empty, BalanceResponse, Tag, TagResponse, TextRequest, TransactionPartnerResponse, TransactionResponse
+    BalanceResponse, Empty, Tag, TagResponse, TextRequest, TransactionPartnerResponse,
+    TransactionResponse,
 };
 use tonic::{transport::Server, Request, Response, Status};
 
@@ -24,20 +29,24 @@ struct MoneyViewServer {
 impl MoneyView for MoneyViewServer {
     // ... existing code ...
 
-    async fn get_tags(
-        &self,
-        _request: Request<Empty>,
-    ) -> Result<Response<TagResponse>, Status> {
-        let tags: Vec<Tag>=self.db.get_tags().await.map_err(to_tonic_error)?.into_iter().map(|t|t.into()).collect();
+    async fn get_tags(&self, _request: Request<Empty>) -> Result<Response<TagResponse>, Status> {
+        let tags: Vec<Tag> = self
+            .db
+            .get_tags()
+            .await
+            .map_err(to_tonic_error)?
+            .into_iter()
+            .map(|t| t.into())
+            .collect();
 
-        Ok(Response::new(TagResponse { tags:tags})) // Placeholder return
+        Ok(Response::new(TagResponse { tags: tags })) // Placeholder return
     }
 
-    async fn set_tag(
-        &self,
-        request: Request<Tag>,
-    ) -> Result<Response<Empty>, Status> {
-        self.db.save_tag(request.into_inner().into()).await.map_err(to_tonic_error)?;
+    async fn set_tag(&self, request: Request<Tag>) -> Result<Response<Empty>, Status> {
+        self.db
+            .save_tag(request.into_inner().into())
+            .await
+            .map_err(to_tonic_error)?;
         self.db.update_tags().await.map_err(to_tonic_error)?;
 
         Ok(Response::new(Empty {})) // Placeholder return
@@ -52,12 +61,13 @@ impl MoneyView for MoneyViewServer {
         let data = parse(mt940_string)
             .await
             .map_err(|e| Status::unknown(e.to_string()))?;
-        self.db
-            .save_all(data) 
-            .await
-            .map_err(to_tonic_error)?;
+        self.db.save_all(data).await.map_err(to_tonic_error)?;
 
-        let data=self.db.get_all_transactions().await.map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
+        let data = self
+            .db
+            .get_all_transactions()
+            .await
+            .map_err(|e| Status::new(tonic::Code::Aborted, e.to_string()))?;
         let mut response = TransactionResponse::default();
         response.transactions = data;
         Ok(Response::new(response))
@@ -148,11 +158,6 @@ impl MoneyView for MoneyViewServer {
             .sum();
         Ok(Response::new(balance_response))
     }
-
-    
-
-    
-
 }
 
 fn to_tonic_error<T>(err: T) -> Status
@@ -166,6 +171,11 @@ where
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     let addr = "0.0.0.0:50051".parse()?;
+    let web_addr = "0.0.0.0:8080";
+    let app = Router::new().fallback(get_service(ServeDir::new("web")).handle_error(
+        |_| async move { (StatusCode::INTERNAL_SERVER_ERROR, "internal server error") },
+    ));
+
     let host = env::var("MONEY_VIEW_DB_HOST").unwrap();
     let database = env::var("MONEY_VIEW_DB_NAME").unwrap();
     let user_name = env::var("MONEY_VIEW_USER").unwrap();
@@ -188,15 +198,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_encoded_file_descriptor_set(api::FILE_DESCRIPTOR_SET)
         .build_v1alpha()?;
 
-    Server::builder()
-        .accept_http1(true)
-        .add_service(reflection_1)
-        .add_service(reflection_1a)
-        .add_service(money_view)
-        .serve(addr)
-        .await?;
+    // Tokio select um beide Server gleichzeitig laufen zu lassen
+    tokio::select! {
+        _ = async {
+            // Starte den Axum HTTP Server
+            println!("Axum listening on {}", &web_addr);
+            let listener = tokio::net::TcpListener::bind(web_addr).await.unwrap();
+            axum::serve(listener, app).await.unwrap();
+        } => {},
+
+        _ = async {
+            // Starte den Tonic gRPC Server
+            println!("Tonic gRPC listening on {}", &addr);
+            Server::builder()
+            .accept_http1(true)
+            .add_service(reflection_1)
+            .add_service(reflection_1a)
+            .add_service(money_view)
+            .serve(addr)
+            .await.unwrap();
+        } => {},
+    }
+
     Ok(())
 }
 
 mod parser;
-pub(crate) type  ShortResult<T> =Result<T, Box<dyn std::error::Error>>;
+pub(crate) type ShortResult<T> = Result<T, Box<dyn std::error::Error>>;

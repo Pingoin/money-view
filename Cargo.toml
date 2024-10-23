@@ -24,6 +24,7 @@ sha2 = "0.10"
 surrealdb={version="2.0.4", features=["rustls"]}
 tonic-build = "0.12.2"
 itertools="0.13.0"
+tower-http = { version = "0.6.1", features = ["fs"] }
 
 [dependencies.uuid]
 version = "1.10.0"

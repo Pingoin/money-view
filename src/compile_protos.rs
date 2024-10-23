@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .file_descriptor_set_path(out_dir.join("reflection.bin"))
         .build_server(true)
         .build_client(false)
-        .compile(&["moneyview.proto"], &["proto"])?;
+        .compile_protos(&["moneyview.proto"], &["proto"])?;
 
     let string_to_add = "use serde::{Serialize, Deserialize};";
     // Lese den Ordner und iteriere über jede Datei

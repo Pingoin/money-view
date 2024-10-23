@@ -8,7 +8,7 @@ class MoneyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final app_state=ApplicationState();
+    final app_state = ApplicationState();
     return ChangeNotifierProvider(
       create: (context) => app_state,
       child: MaterialApp(

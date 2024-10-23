@@ -6,7 +6,7 @@ compile-protos-rust:
 
 # Starts the server and compiles the protobuf files beforehand
 serve-server:
-    cargo watch -i "app" -x "run --bin main"
+    cargo watch -i "app" -x "run --bin money-view"
 
 # Formats the Rust code
 format-rust:
@@ -47,7 +47,9 @@ serve-web:
 compile-protos: compile-protos-dart compile-protos-rust
 
 build-flutter-web: compile-protos-dart
-    cd app && flutter build web
+    cd app && flutter build web --wasm --release
+    rm -rf ./web
+    cp -rf app/build/web ./web
 
 build-server: compile-protos-rust
     cargo build --release

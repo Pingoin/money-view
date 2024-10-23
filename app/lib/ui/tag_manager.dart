@@ -13,7 +13,10 @@ class _TagManagerState extends State<TagManager> {
   Future<void> _loadTags(BuildContext context) async {
     try {
       // Using the context to get the gRPC client and fetch the tags
-      var response = await context.watch<ApplicationState>().moneyViewClient.getTags(Empty());
+      var response = await context
+          .watch<ApplicationState>()
+          .moneyViewClient
+          .getTags(Empty());
       setState(() {
         tags = response.tags;
       });
@@ -22,14 +25,17 @@ class _TagManagerState extends State<TagManager> {
     }
   }
 
-  void _editTag(BuildContext context,Tag tag) {
+  void _editTag(BuildContext context, Tag tag) {
     showDialog(
       context: context,
       builder: (context) {
         return TagEditDialog(
           tag: tag,
           onSave: (updatedTag) async {
-            await context.read<ApplicationState>().moneyViewClient.setTag(updatedTag);
+            await context
+                .read<ApplicationState>()
+                .moneyViewClient
+                .setTag(updatedTag);
             _loadTags(context);
           },
         );
@@ -38,7 +44,7 @@ class _TagManagerState extends State<TagManager> {
   }
 
   void _createTag(BuildContext context) {
-    _editTag(context,Tag(id: '', name: '', keyWords: []));
+    _editTag(context, Tag(id: '', name: '', keyWords: []));
   }
 
   @override
@@ -58,7 +64,7 @@ class _TagManagerState extends State<TagManager> {
               subtitle: Text('Keywords: ${tag.keyWords.join(", ")}'),
               trailing: IconButton(
                 icon: Icon(Icons.edit),
-                onPressed: () => _editTag(context,tag),
+                onPressed: () => _editTag(context, tag),
               ),
             );
           },
@@ -68,7 +74,7 @@ class _TagManagerState extends State<TagManager> {
             _createTag(context);
           },
           child: Icon(Icons.add),
-        ), 
+        ),
       ),
     );
   }
@@ -92,7 +98,8 @@ class _TagEditDialogState extends State<TagEditDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.tag.name);
-    _keywordsController = TextEditingController(text: widget.tag.keyWords.join(", "));
+    _keywordsController =
+        TextEditingController(text: widget.tag.keyWords.join(", "));
   }
 
   @override
@@ -108,7 +115,8 @@ class _TagEditDialogState extends State<TagEditDialog> {
           ),
           TextField(
             controller: _keywordsController,
-            decoration: InputDecoration(labelText: 'Keywords (comma-separated)'),
+            decoration:
+                InputDecoration(labelText: 'Keywords (comma-separated)'),
           ),
         ],
       ),
@@ -122,7 +130,10 @@ class _TagEditDialogState extends State<TagEditDialog> {
             final updatedTag = Tag(
               id: widget.tag.id.isEmpty ? widget.tag.name : widget.tag.id,
               name: _nameController.text,
-              keyWords: _keywordsController.text.split(',').map((e) => e.trim()).toList(),
+              keyWords: _keywordsController.text
+                  .split(',')
+                  .map((e) => e.trim())
+                  .toList(),
             );
             widget.onSave(updatedTag);
             Navigator.of(context).pop();

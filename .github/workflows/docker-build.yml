@@ -1,5 +1,4 @@
-name: Build Protobufs, Flutter Web, and Rust Binaries
-
+name: Build image
 on:
   push:
     branches:
@@ -8,11 +7,46 @@ on:
 
 jobs:
   # Schritt für das Generieren der Proto-Files und Flutter-Web-Anwendung
+  build_protos:
+    runs-on: ubuntu-latest
+    name: Build protobuf for rust
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - run: . "$HOME/.cargo/env"  
+      - run: rustup update stable && rustup default stable
+      - name: Install dependencies
+        run: 
+          sudo apt-get install -y protobuf-compiler
+          dart pub global activate protoc_plugin
+      - name: Compile Protobuf files for Rust
+        run: 
+          cargo run --bin compile_protos
+      - name: Compile Protobuf files for Dart (Flutter)
+        run: |
+            PROTO_DIR="proto"
+            OUT_DIR="app/lib/generated"
+            mkdir -p $OUT_DIR
+            for proto_file in $PROTO_DIR/*.proto; do
+              protoc -I=$PROTO_DIR --dart_out=grpc:$OUT_DIR $proto_file
+            done
+      - name: Upload Rust Protobuf artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-protos
+          path: src/generated/
+      - name: Upload Rust Protobuf artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-protos
+          path: app/lib/generated/
+  
   build_protos_flutter:
     runs-on: ubuntu-latest
     name: Build Frontend
-    outputs:
-      proto_dir: ${{ steps.protos.outputs.proto_dir }}
+    needs: build_protos
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,63 +55,29 @@ jobs:
         with:
           channel: stable
           flutter-version: 3.24.0
-
-      - name: Install protoc and Dart plugin
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
-          dart pub global activate protoc_plugin
-
-      - name: Compile Protobuf files for Dart (Flutter)
-        run: |
-          PROTO_DIR="proto"
-          OUT_DIR="app/lib/generated"
-          mkdir -p $OUT_DIR
-          for proto_file in $PROTO_DIR/*.proto; do
-            protoc -I=$PROTO_DIR --dart_out=grpc:$OUT_DIR $proto_file
-          done
-
+      - name: Download Flutter Protobuf files
+        uses: actions/download-artifact@v4
+        with:
+          name: flutter-protos
+          path: ./app/lib/generated/ 
       - name: Build Flutter Web App
         run: |
           cd app
           flutter build web
-
       - name: Upload Flutter build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: flutter-web
           path: app/build/web/
 
-      - name: Output Proto Directory
-        id: protos
-        run: echo "name=proto_dir::proto >> $GITHUB_OUTPUT"
-
   # Schritt für das Generieren der Rust Protobuf-Dateien (nur einmal)
-  build_rust_protos:
-    runs-on: ubuntu-latest
-    name: Build protobuf for rust
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      # Install Rust toolchain
-      - run: rustup update stable && rustup default stable
-      - name: Install dependencies
-        run: sudo apt-get install -y build-essential pkg-config libssl-dev protobuf-compiler
-
-      - name: Compile Protobuf files for Rust
-        run: cargo run --bin compile_protos
-
-      - name: Upload Rust Protobuf artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: rust-protos
-          path: src/generated/  # Verzeichnis mit generierten Protobuf-Dateien
+ # Verzeichnis mit generierten Protobuf-Dateien
 
   # Kompiliert Rust in zwei verschiedenen Architekturen, verwendet die generierten Protobuf-Dateien
   build_rust_x86_64:
     runs-on: ubuntu-latest
     name: Build Server on AMD64
-    needs: build_rust_protos
+    needs: build_protos
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,7 +98,7 @@ jobs:
   build_rust_aarch64:
     runs-on: ubuntu-latest
     name: Build Server on ARM64
-    needs: build_rust_protos
+    needs: build_protos
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
