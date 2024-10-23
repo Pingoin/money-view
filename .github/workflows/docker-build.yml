@@ -20,6 +20,8 @@ jobs:
       - name: Install dependencies
         run: 
           sudo apt-get install -y protobuf-compiler
+      - name: Install protoc-gen-dart
+        run: 
           dart pub global activate protoc_plugin
       - name: Compile Protobuf files for Rust
         run: 
