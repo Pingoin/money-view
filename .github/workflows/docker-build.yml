@@ -23,6 +23,7 @@ jobs:
       - name: Install protoc-gen-dart
         run: 
           dart pub global activate protoc_plugin
+      - uses: Swatinem/rust-cache@v2
       - name: Compile Protobuf files for Rust
         run: 
           cargo run --bin compile_protos
@@ -89,6 +90,7 @@ jobs:
           name: rust-protos
           path: ./src/generated/ 
       - run: rustup update stable && rustup default stable
+      - uses: Swatinem/rust-cache@v2
       - name: Build Rust Binary
         run: |
           cargo build --release --bin money-view
@@ -114,6 +116,7 @@ jobs:
         run: rustup target add aarch64-unknown-linux-gnu
       - name: Install arm64 Linker
         run: sudo apt-get install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu pkg-config libssl-dev
+      - uses: Swatinem/rust-cache@v2
       - name: Build Rust Binary
         run: |
           cargo build --release --bin money-view --target=aarch64-unknown-linux-gnu

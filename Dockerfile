@@ -1,5 +1,5 @@
 # Use a minimal base image for running the server
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 ARG TARGETARCH
 
