@@ -5,7 +5,7 @@ ARG TARGETARCH
 
 # Copy Rust server binary
 COPY ./bin/$TARGETARCH/money-view /opt/money-view/money-view
-RUN chmod +x /usr/local/bin/money-view
+RUN chmod +x /opt/money-view/money-view
 
 # Copy Flutter web build
 COPY ./web /opt/money-view/web
