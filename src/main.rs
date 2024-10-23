@@ -1,7 +1,5 @@
 use axum::routing::get_service;
 use axum::{
-    response::IntoResponse,
-    routing::get,
     http::StatusCode,
     Router,
 };
@@ -10,8 +8,6 @@ use dotenvy::dotenv;
 use parser::parse;
 use std::env;
 use std::path::PathBuf;
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
 use tower_http::services::ServeDir;
 pub(crate) mod generated {
     pub(crate) mod money_view;
@@ -187,7 +183,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Router definieren, um statische Dateien und die index.html für alle nicht gefundenen Routen auszuliefern
     let app = Router::new()
-        .route("/", get(serve_index_html))
         .fallback_service(static_service);
 
     let host = env::var("MONEY_VIEW_DB_HOST").unwrap();
@@ -239,26 +234,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 mod parser;
 pub(crate) type ShortResult<T> = Result<T, Box<dyn std::error::Error>>;
-
-// Handler für die Root-URL ("/"), der die index.html ausliefert
-async fn serve_index_html() -> impl IntoResponse {
-    // Pfad zur index.html Datei
-    let index_path = "./web/index.html";
-    
-    // Versuche, die Datei zu öffnen
-    match File::open(index_path).await {
-        Ok(mut file) => {
-            let mut contents = String::new();
-            if let Err(_) = file.read_to_string(&mut contents).await {
-                // Fehler beim Lesen der Datei
-                return (StatusCode::INTERNAL_SERVER_ERROR, "Fehler beim Laden der Datei").into_response();
-            }
-            // Erfolgreich, gib den Inhalt der index.html zurück
-            contents.into_response()
-        },
-        Err(_) => {
-            // Fehler beim Öffnen der Datei
-            (StatusCode::INTERNAL_SERVER_ERROR, "Datei nicht gefunden").into_response()
-        }
-    }
-}
