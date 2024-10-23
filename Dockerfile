@@ -14,4 +14,4 @@ COPY ./web .
 EXPOSE 50051 8080
 
 # Starte Supervisor, um beide Dienste zu starten
-CMD ["money-view"]
+CMD ["./money-view"]
