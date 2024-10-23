@@ -1,9 +1,16 @@
 services:
   money-view-server:
     image: pingoin/money-view:latest  # Verwende das bereits hochgeladene Image
+    environment:
+      - MONEY_VIEW_DB_HOST=${MONEY_VIEW_DB_HOST}
+      - MONEY_VIEW_DB_NAME=${MONEY_VIEW_DB_NAME}
+      - MONEY_VIEW_USER=${MONEY_VIEW_USER}
+      - MONEY_VIEW_DB_PASSWD=${MONEY_VIEW_DB_PASSWD}
+      - MONEY_VIEW_DB_NAMESPACE=${MONEY_VIEW_DB_NAMESPACE}
+      - MONEY_VIEW_WEB_HOST=${MONEY_VIEW_WEB_HOST}
     ports:
-      - "50051:50051"  # gRPC Server-Port
-      - "8080:8080"  # Nginx Web-Server-Port
+      - "50051:50051"
+      - "8080:8080" 
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Nginx Konfigurationsdatei
       - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf  # Supervisor Konfigurationsdatei

@@ -12,7 +12,7 @@ class MoneyView extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => app_state,
       child: MaterialApp(
-        title: 'Namer App',
+        title: 'Money View',
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
