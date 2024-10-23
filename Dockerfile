@@ -8,7 +8,7 @@ COPY ./bin/$TARGETARCH/money-view .
 RUN chmod +x ./money-view
 
 # Copy Flutter web build
-COPY ./web .
+COPY ./web ./web
 
 # Exponiere die Ports für gRPC und Nginx
 EXPOSE 50051 8080
