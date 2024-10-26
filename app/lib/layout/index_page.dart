@@ -1,4 +1,3 @@
-import 'package:app/ui/home.dart';
 import 'package:app/ui/partner_balance.dart';
 import 'package:app/ui/tag_balance.dart';
 import 'package:app/ui/tag_manager.dart';
@@ -18,14 +17,12 @@ class _IndexPageState extends State<IndexPage> {
     Widget page;
     switch (selectedIndex) {
       case 0:
-        page = Home();
-      case 1:
         page = TransactionList();
-      case 2:
+      case 1:
         page = PartnerBalanceWidget();
-      case 3:
+      case 2:
         page = TagBalanceWidget();
-      case 4:
+      case 3:
         page = TagManager();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
@@ -52,12 +49,8 @@ class _IndexPageState extends State<IndexPage> {
       extended: constraints.maxWidth >= 600,
       destinations: [
         NavigationRailDestination(
-          icon: Icon(Icons.home),
-          label: Text('Home'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.favorite),
-          label: Text('Favorites'),
+          icon: Icon(Icons.transform),
+          label: Text('Transaktionen'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.account_balance_wallet),
