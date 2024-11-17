@@ -1,33 +1,33 @@
 [package]
 name = "money-view"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
 axum = "0.7.9"
 serde = { version = "1.0.215", features = ["derive"] }
-prost = "0.13.2"
-prost-types = "0.13.2"
-tokio = { version = "1.40.0", features = ["macros", "rt-multi-thread"] }
-tonic = { version = "0.12.2", features = ["tls","router"] }
-tonic-web = "0.12.2"
-tonic-reflection = "0.12.2"
-tonic-types = "0.12.2"
+prost = "0.13.3"
+prost-types = "0.13.3"
+tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread"] }
+tonic = { version = "0.12.3", features = ["tls","router"] }
+tonic-web = "0.12.3"
+tonic-reflection = "0.12.3"
+tonic-types = "0.12.3"
 dotenvy = "0.15"
 mt940="1"
-rayon ="1.7"
+rayon ="1.10"
 rust_decimal = "1.36.0"
-regex = "1.10.6"
+regex = "1.11.1"
 lazy_static = "1"
 chrono = "0.4.38"
 sha2 = "0.10"
 surrealdb={version="2.0.4", features=["rustls"]}
-tonic-build = "0.12.2"
+tonic-build = "0.12.3"
 itertools="0.13.0"
 tower-http = { version = "0.6.1", features = ["fs","cors"] }
 
 [dependencies.uuid]
-version = "1.10.0"
+version = "1.11.0"
 features = [
     "v4",                # Lets you generate random UUIDs
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
