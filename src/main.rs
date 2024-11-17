@@ -1,13 +1,12 @@
+use axum::http::StatusCode;
 use axum::routing::get_service;
-use axum::{
-    http::StatusCode,
-    Router,
-};
 use database::Database;
 use dotenvy::dotenv;
 use parser::parse;
+use tonic::service::Routes;
 use std::env;
 use std::path::PathBuf;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 pub(crate) mod generated {
     pub(crate) mod money_view;
@@ -18,7 +17,7 @@ use api::{
     BalanceResponse, Empty, Tag, TagResponse, TextRequest, TransactionPartnerResponse,
     TransactionResponse,
 };
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::{Request, Response, Status};
 
 pub(crate) mod api;
 pub(crate) mod database;
@@ -173,17 +172,12 @@ where
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
-    let addr = "0.0.0.0:50051".parse()?;
     let web_addr = env::var("MONEY_VIEW_WEB_HOST").unwrap();
     let web_dir = PathBuf::from("./web");
 
     // Service für statische Dateien
     let static_service = get_service(ServeDir::new(web_dir.clone()))
         .handle_error(|_| async { StatusCode::INTERNAL_SERVER_ERROR });
-
-    // Router definieren, um statische Dateien und die index.html für alle nicht gefundenen Routen auszuliefern
-    let app = Router::new()
-        .fallback_service(static_service);
 
     let host = env::var("MONEY_VIEW_DB_HOST").unwrap();
     let database = env::var("MONEY_VIEW_DB_NAME").unwrap();
@@ -206,7 +200,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reflection_1a = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(api::FILE_DESCRIPTOR_SET)
         .build_v1alpha()?;
+    let cors = CorsLayer::new()
+        .allow_headers(Any)
+        .allow_methods(Any)
+        .allow_origin(Any);
 
+    let tonic_server = Routes::new(reflection_1)
+        .add_service(reflection_1a)
+        .add_service(money_view);
+    let app = tonic_server.into_axum_router()// gRPC-Anfragen über Axum-Router
+    .layer(cors) // CORS-Layer für Axum
+    .fallback_service(static_service);
     // Tokio select um beide Server gleichzeitig laufen zu lassen
     tokio::select! {
         _ = async {
@@ -214,19 +218,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Axum listening on {}", &web_addr);
             let listener = tokio::net::TcpListener::bind(web_addr).await.unwrap();
             axum::serve(listener, app).await.unwrap();
-        } => {},
-
-        _ = async {
-            // Starte den Tonic gRPC Server
-            println!("Tonic gRPC listening on {}", &addr);
-            Server::builder()
-            .accept_http1(true)
-            .add_service(reflection_1)
-            .add_service(reflection_1a)
-            .add_service(money_view)
-            .serve(addr)
-            .await.unwrap();
-        } => {},
+        } => {}
     }
 
     Ok(())

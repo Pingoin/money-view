@@ -9,7 +9,6 @@ services:
       - MONEY_VIEW_DB_NAMESPACE=${MONEY_VIEW_DB_NAMESPACE}
       - MONEY_VIEW_WEB_HOST=${MONEY_VIEW_WEB_HOST}
     ports:
-      - "50051:50051"
       - "8080:8080" 
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Nginx Konfigurationsdatei
